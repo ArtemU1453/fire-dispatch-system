@@ -1,0 +1,24 @@
+[project]
+name = "ai-dispatcher-mchs"
+version = "0.1.0"
+description = "AI Dispatcher МЧС — industrial FastAPI backend scaffold"
+requires-python = ">=3.13"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+pythonpath = ["backend"]
+addopts = "-ra -q"
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+src = ["backend"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+# Keep explicit `Generic[T]` base classes instead of PEP 695 `class Foo[T]`
+# syntax: it is clearer for the layered generics here and interacts more
+# predictably with Pydantic v2 generic models.
+ignore = ["UP046", "UP047"]
