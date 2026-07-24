@@ -11,6 +11,7 @@ from __future__ import annotations
 from logging.config import fileConfig
 
 from alembic import context
+from geoalchemy2 import alembic_helpers
 from sqlalchemy import engine_from_config, pool
 
 import app.models  # noqa: F401  (side-effect: registers models)
@@ -34,14 +35,25 @@ if config.config_file_name is not None:
 target_metadata = Base.metadata
 
 
+# Shared configuration for both modes. GeoAlchemy2's Alembic helpers make
+# autogenerate PostGIS-aware: they render ``Geometry`` types, manage spatial
+# (GiST) indexes, and exclude PostGIS-managed objects such as ``spatial_ref_sys``.
+_COMMON_OPTS = dict(
+    target_metadata=target_metadata,
+    compare_type=True,
+    include_object=alembic_helpers.include_object,
+    render_item=alembic_helpers.render_item,
+    process_revision_directives=alembic_helpers.writer,
+)
+
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode (emit SQL without a DB connection)."""
     context.configure(
         url=config.get_main_option("sqlalchemy.url"),
-        target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        compare_type=True,
+        **_COMMON_OPTS,
     )
     with context.begin_transaction():
         context.run_migrations()
@@ -55,11 +67,7 @@ def run_migrations_online() -> None:
         poolclass=pool.NullPool,
     )
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-            compare_type=True,
-        )
+        context.configure(connection=connection, **_COMMON_OPTS)
         with context.begin_transaction():
             context.run_migrations()
 

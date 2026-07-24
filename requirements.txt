@@ -3,7 +3,7 @@ fastapi==0.115.6
 uvicorn[standard]==0.34.0
 
 # --- Configuration & validation (Pydantic v2) ---
-pydantic==2.10.4
+pydantic[email]==2.10.4
 pydantic-settings==2.7.1
 
 # --- Database (SQLAlchemy 2.x + drivers) ---
@@ -11,6 +11,8 @@ SQLAlchemy[asyncio]==2.0.36
 alembic==1.14.0
 asyncpg==0.30.0          # async driver used by the application
 psycopg[binary]==3.2.3   # sync driver used by Alembic migrations
+GeoAlchemy2==0.16.0      # PostGIS geometry types for SQLAlchemy
+shapely==2.0.6           # geometry (de)serialization helper for GeoAlchemy2
 
 # --- Testing ---
 pytest==8.3.4

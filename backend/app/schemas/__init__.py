@@ -1,6 +1,200 @@
-"""Pydantic v2 schemas (API request/response contracts)."""
+"""Pydantic v2 schemas (API request/response contracts).
 
-from app.schemas.common import Page, PaginationParams, SchemaBase
+Every entity exposes ``Create`` / ``Update`` / ``Response`` schemas. Shared
+primitives live in :mod:`app.schemas.common`; the health schema predates the
+domain model and is kept for the ``/health`` endpoint.
+"""
+
+from app.schemas.assets import (
+    EquipmentCreate,
+    EquipmentResponse,
+    EquipmentUpdate,
+    PersonnelCreate,
+    PersonnelResponse,
+    PersonnelUpdate,
+    StationCreate,
+    StationResponse,
+    StationUpdate,
+    VehicleCreate,
+    VehicleResponse,
+    VehicleUpdate,
+)
+from app.schemas.audit import AuditLogCreate, AuditLogResponse, AuditLogUpdate
+from app.schemas.catalog import (
+    AvailabilityStatusCreate,
+    AvailabilityStatusResponse,
+    AvailabilityStatusUpdate,
+    CapabilityCreate,
+    CapabilityResponse,
+    CapabilityUpdate,
+    EquipmentTypeCreate,
+    EquipmentTypeResponse,
+    EquipmentTypeUpdate,
+    IncidentTypeCapabilityCreate,
+    IncidentTypeCapabilityResponse,
+    IncidentTypeCapabilityUpdate,
+    IncidentTypeCreate,
+    IncidentTypeResponse,
+    IncidentTypeUpdate,
+    PersonnelRoleCreate,
+    PersonnelRoleResponse,
+    PersonnelRoleUpdate,
+    ResourceTypeCreate,
+    ResourceTypeResponse,
+    ResourceTypeUpdate,
+    VehicleTypeCreate,
+    VehicleTypeResponse,
+    VehicleTypeUpdate,
+)
+from app.schemas.common import Page, PaginationParams, ResponseBase, SchemaBase
+from app.schemas.geo import (
+    AdministrativeAreaCreate,
+    AdministrativeAreaResponse,
+    AdministrativeAreaUpdate,
+    CoverageAreaCreate,
+    CoverageAreaIncidentTypeCreate,
+    CoverageAreaIncidentTypeResponse,
+    CoverageAreaIncidentTypeUpdate,
+    CoverageAreaResponse,
+    CoverageAreaUpdate,
+    LocationCreate,
+    LocationResponse,
+    LocationUpdate,
+)
 from app.schemas.health import HealthStatus
+from app.schemas.history import (
+    CoordinateHistoryCreate,
+    CoordinateHistoryResponse,
+    CoordinateHistoryUpdate,
+    StatusHistoryCreate,
+    StatusHistoryResponse,
+    StatusHistoryUpdate,
+)
+from app.schemas.organization import (
+    OrganizationCreate,
+    OrganizationResponse,
+    OrganizationUpdate,
+)
+from app.schemas.resource import (
+    ResourceCapabilityCreate,
+    ResourceCapabilityResponse,
+    ResourceCapabilityUpdate,
+    ResourceCreate,
+    ResourceResponse,
+    ResourceUpdate,
+)
+from app.schemas.security import (
+    PermissionCreate,
+    PermissionResponse,
+    PermissionUpdate,
+    RoleCreate,
+    RolePermissionCreate,
+    RolePermissionResponse,
+    RolePermissionUpdate,
+    RoleResponse,
+    RoleUpdate,
+    UserCreate,
+    UserResponse,
+    UserRoleCreate,
+    UserRoleResponse,
+    UserRoleUpdate,
+    UserUpdate,
+)
 
-__all__ = ["Page", "PaginationParams", "SchemaBase", "HealthStatus"]
+__all__ = [
+    # common
+    "SchemaBase",
+    "ResponseBase",
+    "Page",
+    "PaginationParams",
+    "HealthStatus",
+    # resource
+    "ResourceCreate",
+    "ResourceUpdate",
+    "ResourceResponse",
+    "ResourceCapabilityCreate",
+    "ResourceCapabilityUpdate",
+    "ResourceCapabilityResponse",
+    # catalog
+    "ResourceTypeCreate",
+    "ResourceTypeUpdate",
+    "ResourceTypeResponse",
+    "VehicleTypeCreate",
+    "VehicleTypeUpdate",
+    "VehicleTypeResponse",
+    "PersonnelRoleCreate",
+    "PersonnelRoleUpdate",
+    "PersonnelRoleResponse",
+    "EquipmentTypeCreate",
+    "EquipmentTypeUpdate",
+    "EquipmentTypeResponse",
+    "AvailabilityStatusCreate",
+    "AvailabilityStatusUpdate",
+    "AvailabilityStatusResponse",
+    "CapabilityCreate",
+    "CapabilityUpdate",
+    "CapabilityResponse",
+    "IncidentTypeCreate",
+    "IncidentTypeUpdate",
+    "IncidentTypeResponse",
+    "IncidentTypeCapabilityCreate",
+    "IncidentTypeCapabilityUpdate",
+    "IncidentTypeCapabilityResponse",
+    # organization
+    "OrganizationCreate",
+    "OrganizationUpdate",
+    "OrganizationResponse",
+    # geo
+    "AdministrativeAreaCreate",
+    "AdministrativeAreaUpdate",
+    "AdministrativeAreaResponse",
+    "LocationCreate",
+    "LocationUpdate",
+    "LocationResponse",
+    "CoverageAreaCreate",
+    "CoverageAreaUpdate",
+    "CoverageAreaResponse",
+    "CoverageAreaIncidentTypeCreate",
+    "CoverageAreaIncidentTypeUpdate",
+    "CoverageAreaIncidentTypeResponse",
+    # assets
+    "StationCreate",
+    "StationUpdate",
+    "StationResponse",
+    "VehicleCreate",
+    "VehicleUpdate",
+    "VehicleResponse",
+    "PersonnelCreate",
+    "PersonnelUpdate",
+    "PersonnelResponse",
+    "EquipmentCreate",
+    "EquipmentUpdate",
+    "EquipmentResponse",
+    # history
+    "StatusHistoryCreate",
+    "StatusHistoryUpdate",
+    "StatusHistoryResponse",
+    "CoordinateHistoryCreate",
+    "CoordinateHistoryUpdate",
+    "CoordinateHistoryResponse",
+    # security
+    "UserCreate",
+    "UserUpdate",
+    "UserResponse",
+    "RoleCreate",
+    "RoleUpdate",
+    "RoleResponse",
+    "PermissionCreate",
+    "PermissionUpdate",
+    "PermissionResponse",
+    "UserRoleCreate",
+    "UserRoleUpdate",
+    "UserRoleResponse",
+    "RolePermissionCreate",
+    "RolePermissionUpdate",
+    "RolePermissionResponse",
+    # audit
+    "AuditLogCreate",
+    "AuditLogUpdate",
+    "AuditLogResponse",
+]

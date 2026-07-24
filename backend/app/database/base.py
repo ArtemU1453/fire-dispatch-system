@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import DateTime, func
+from sqlalchemy import Boolean, DateTime, func, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -33,4 +33,20 @@ class TimestampMixin:
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
+    )
+
+
+class SoftDeleteMixin:
+    """Reusable ``is_deleted`` flag enabling logical (soft) deletion (DRY).
+
+    Rows are never physically removed by the application; instead this flag is
+    set so history, audit trails and foreign keys remain intact. Repositories
+    filter it out by default.
+    """
+
+    is_deleted: Mapped[bool] = mapped_column(
+        Boolean,
+        server_default=text("false"),
+        nullable=False,
+        index=True,
     )
