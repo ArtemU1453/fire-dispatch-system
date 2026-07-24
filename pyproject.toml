@@ -15,10 +15,16 @@ addopts = "-ra -q"
 line-length = 88
 target-version = "py313"
 src = ["backend"]
+# Alembic writes the versioned migration files; they are generated artefacts and
+# not linted (the hand-written env.py and the initial migration still are).
+extend-exclude = ["migrations/versions"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
-# Keep explicit `Generic[T]` base classes instead of PEP 695 `class Foo[T]`
-# syntax: it is clearer for the layered generics here and interacts more
-# predictably with Pydantic v2 generic models.
-ignore = ["UP046", "UP047"]
+# UP046/UP047: keep explicit `Generic[T]` base classes instead of PEP 695
+# `class Foo[T]` syntax — clearer for the layered generics here and more
+# predictable with Pydantic v2 generic models.
+# UP042: keep `(str, enum.Enum)` rather than `StrEnum`; the value-based
+# serialization is relied on across schemas and the enum is already committed
+# in a migration.
+ignore = ["UP046", "UP047", "UP042"]

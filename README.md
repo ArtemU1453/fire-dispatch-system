@@ -17,7 +17,8 @@ architectural change.
 | Web framework   | FastAPI               |
 | ORM             | SQLAlchemy 2.x (async)|
 | Migrations      | Alembic               |
-| Database        | PostgreSQL            |
+| Database        | PostgreSQL + PostGIS  |
+| Geospatial      | GeoAlchemy2 / PostGIS |
 | Validation      | Pydantic v2           |
 | ASGI server     | Uvicorn               |
 | Testing         | pytest                |
@@ -59,7 +60,21 @@ fire-dispatch-system/
 ```
 
 See [`docs/architecture.md`](docs/architecture.md) for the layer diagram and the
-step-by-step guide to adding a new feature.
+step-by-step guide to adding a new feature, and
+[`docs/data-model.md`](docs/data-model.md) for the full data model (ER diagram,
+every table and relationship, normalization notes, and the indexing / scaling
+strategy). A PlantUML diagram is provided in
+[`docs/er-diagram.puml`](docs/er-diagram.puml).
+
+### Data model (Stage 2)
+
+The domain model is **resource-centric**: every managed object (station,
+vehicle, hydrant, hospital, …) is a `Resource` typed by a catalog `ResourceType`,
+so new kinds of resource are added as **data, not schema**. Vehicles, personnel,
+equipment and stations have 1:1 specialization tables; geospatial data uses
+PostGIS `geometry(Point/MultiPolygon, 4326)` columns with GiST indexes. All
+tables carry `id` (UUID), `created_at`, `updated_at` and `is_deleted`
+(soft-delete). See the data-model doc for details.
 
 ## Quick start with Docker Compose (recommended)
 
@@ -94,7 +109,10 @@ curl http://localhost:8000/health
 
 ## Local development (without Docker)
 
-Requires Python 3.13 and a reachable PostgreSQL instance.
+Requires Python 3.13 and a reachable **PostgreSQL instance with the PostGIS
+extension available** (the first migration runs `CREATE EXTENSION postgis`, so
+the database role must be allowed to create it, or an admin should enable it
+once). The Docker Compose stack already uses a PostGIS image.
 
 ```bash
 # 1. Create and activate a virtual environment.

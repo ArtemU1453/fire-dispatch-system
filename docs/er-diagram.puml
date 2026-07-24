@@ -1,0 +1,269 @@
+@startuml AI-Dispatcher-Data-Model
+' PlantUML ER diagram for the AI Dispatcher МЧС data model (Stage 2).
+' Render with: plantuml docs/er-diagram.puml  (produces er-diagram.png)
+' Common audit columns (created_at, updated_at, is_deleted) are omitted for brevity.
+
+hide circle
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+
+' ===================== Catalog / lookup =====================
+entity ResourceType {
+  * id : uuid <<PK>>
+  --
+  * code : varchar <<UK>>
+  * name : varchar
+  * category : resource_category
+}
+entity VehicleType {
+  * id : uuid <<PK>>
+  --
+  * code : varchar <<UK>>
+  * name : varchar
+}
+entity PersonnelRole {
+  * id : uuid <<PK>>
+  --
+  * code : varchar <<UK>>
+  * name : varchar
+}
+entity EquipmentType {
+  * id : uuid <<PK>>
+  --
+  * code : varchar <<UK>>
+  * name : varchar
+}
+entity AvailabilityStatus {
+  * id : uuid <<PK>>
+  --
+  * code : varchar <<UK>>
+  * name : varchar
+  is_operational : bool
+  is_available_for_dispatch : bool
+}
+entity Capability {
+  * id : uuid <<PK>>
+  --
+  * code : varchar <<UK>>
+  * name : varchar
+}
+entity IncidentType {
+  * id : uuid <<PK>>
+  --
+  * code : varchar <<UK>>
+  * name : varchar
+  parent_id : uuid <<FK>>
+}
+entity IncidentTypeCapability {
+  * id : uuid <<PK>>
+  --
+  * incident_type_id : uuid <<FK>>
+  * capability_id : uuid <<FK>>
+  min_quantity : int
+}
+
+' ===================== Organization & core =====================
+entity Organization {
+  * id : uuid <<PK>>
+  --
+  * code : varchar <<UK>>
+  * name : varchar
+  parent_id : uuid <<FK>>
+}
+entity Resource {
+  * id : uuid <<PK>>
+  --
+  * code : varchar <<UK>>
+  * name : varchar
+  * resource_type_id : uuid <<FK>>
+  * organization_id : uuid <<FK>>
+  availability_status_id : uuid <<FK>>
+  location_id : uuid <<FK>>
+  home_station_id : uuid <<FK>>
+  latitude : float
+  longitude : float
+  geom : geometry(Point,4326)
+}
+entity ResourceCapability {
+  * id : uuid <<PK>>
+  --
+  * resource_id : uuid <<FK>>
+  * capability_id : uuid <<FK>>
+  quantity : int
+}
+
+' ===================== Specializations (1:1 Resource) =====================
+entity Station {
+  * id : uuid <<PK>>
+  --
+  * resource_id : uuid <<FK,UK>>
+  station_number : varchar
+  garage_capacity : int
+}
+entity Vehicle {
+  * id : uuid <<PK>>
+  --
+  * resource_id : uuid <<FK,UK>>
+  * vehicle_type_id : uuid <<FK>>
+  plate_number : varchar <<UK>>
+  water_capacity_l : int
+  ladder_height_m : float
+}
+entity Personnel {
+  * id : uuid <<PK>>
+  --
+  * resource_id : uuid <<FK,UK>>
+  * personnel_role_id : uuid <<FK>>
+  first_name : varchar
+  last_name : varchar
+  badge_number : varchar <<UK>>
+}
+entity Equipment {
+  * id : uuid <<PK>>
+  --
+  * resource_id : uuid <<FK,UK>>
+  * equipment_type_id : uuid <<FK>>
+  serial_number : varchar <<UK>>
+  quantity : int
+}
+
+' ===================== Geospatial =====================
+entity AdministrativeArea {
+  * id : uuid <<PK>>
+  --
+  * code : varchar
+  * name : varchar
+  level : int
+  parent_id : uuid <<FK>>
+  boundary : geometry(MultiPolygon,4326)
+}
+entity Location {
+  * id : uuid <<PK>>
+  --
+  address : varchar
+  administrative_area_id : uuid <<FK>>
+  latitude : float
+  longitude : float
+  geom : geometry(Point,4326)
+}
+entity CoverageArea {
+  * id : uuid <<PK>>
+  --
+  * name : varchar
+  resource_id : uuid <<FK>>
+  administrative_area_id : uuid <<FK>>
+  area : geometry(MultiPolygon,4326)
+}
+entity CoverageAreaIncidentType {
+  * id : uuid <<PK>>
+  --
+  * coverage_area_id : uuid <<FK>>
+  * incident_type_id : uuid <<FK>>
+}
+
+' ===================== History =====================
+entity StatusHistory {
+  * id : uuid <<PK>>
+  --
+  * resource_id : uuid <<FK>>
+  from_status_id : uuid <<FK>>
+  * to_status_id : uuid <<FK>>
+  changed_at : timestamptz
+  changed_by_user_id : uuid <<FK>>
+}
+entity CoordinateHistory {
+  * id : uuid <<PK>>
+  --
+  * resource_id : uuid <<FK>>
+  latitude : float
+  longitude : float
+  geom : geometry(Point,4326)
+  recorded_at : timestamptz
+}
+
+' ===================== Security & audit =====================
+entity User {
+  * id : uuid <<PK>>
+  --
+  * username : varchar <<UK>>
+  * email : varchar <<UK>>
+  * hashed_password : varchar
+  personnel_id : uuid <<FK>>
+}
+entity Role {
+  * id : uuid <<PK>>
+  --
+  * code : varchar <<UK>>
+  * name : varchar
+}
+entity Permission {
+  * id : uuid <<PK>>
+  --
+  * code : varchar <<UK>>
+  * name : varchar
+}
+entity UserRole {
+  * id : uuid <<PK>>
+  --
+  * user_id : uuid <<FK>>
+  * role_id : uuid <<FK>>
+}
+entity RolePermission {
+  * id : uuid <<PK>>
+  --
+  * role_id : uuid <<FK>>
+  * permission_id : uuid <<FK>>
+}
+entity AuditLog {
+  * id : uuid <<PK>>
+  --
+  user_id : uuid <<FK>>
+  * action : audit_action
+  * entity_type : varchar
+  entity_id : uuid
+  changes : jsonb
+  occurred_at : timestamptz
+}
+
+' ===================== Relationships =====================
+Organization ||--o{ Resource
+ResourceType ||--o{ Resource
+AvailabilityStatus ||--o{ Resource
+Location ||--o{ Resource
+Resource ||--o{ Resource : home_station
+Organization ||--o{ Organization : parent
+
+Resource ||--o| Station
+Resource ||--o| Vehicle
+Resource ||--o| Personnel
+Resource ||--o| Equipment
+VehicleType ||--o{ Vehicle
+PersonnelRole ||--o{ Personnel
+EquipmentType ||--o{ Equipment
+
+Resource ||--o{ ResourceCapability
+Capability ||--o{ ResourceCapability
+IncidentType ||--o{ IncidentTypeCapability
+Capability ||--o{ IncidentTypeCapability
+IncidentType ||--o{ IncidentType : parent
+
+AdministrativeArea ||--o{ AdministrativeArea : parent
+AdministrativeArea ||--o{ Location
+Resource ||--o{ CoverageArea
+AdministrativeArea ||--o{ CoverageArea
+CoverageArea ||--o{ CoverageAreaIncidentType
+IncidentType ||--o{ CoverageAreaIncidentType
+
+Resource ||--o{ StatusHistory
+AvailabilityStatus ||--o{ StatusHistory
+Resource ||--o{ CoordinateHistory
+
+Personnel ||--o| User
+User ||--o{ UserRole
+Role ||--o{ UserRole
+Role ||--o{ RolePermission
+Permission ||--o{ RolePermission
+User ||--o{ AuditLog
+User ||--o{ StatusHistory : changed_by
+
+@enduml
