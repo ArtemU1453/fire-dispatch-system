@@ -10,6 +10,11 @@ asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
 pythonpath = ["backend"]
 addopts = "-ra -q"
+filterwarnings = [
+    # Benign asyncpg teardown artifact when the best-effort geocoding-log write
+    # touches the shared engine across pytest's per-test event loops.
+    "ignore:coroutine 'Connection._cancel' was never awaited:RuntimeWarning",
+]
 
 [tool.ruff]
 line-length = 88

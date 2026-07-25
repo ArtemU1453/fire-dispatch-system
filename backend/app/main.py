@@ -19,6 +19,8 @@ from app.api.v1.router import api_router
 from app.config import Settings, get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging, get_logger
+from app.gis.cache import create_cache
+from app.gis.providers import create_provider
 from app.middleware import RequestContextMiddleware
 
 logger = get_logger(__name__)
@@ -34,8 +36,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         settings.APP_VERSION,
         settings.APP_ENV,
     )
-    yield
-    logger.info("Shutting down %s", settings.APP_NAME)
+    # GIS provider and cache are created once and shared across requests
+    # (avoids per-request HTTP client creation). Exposed via app.state.
+    app.state.geo_provider = create_provider(settings)
+    app.state.geo_cache = create_cache(settings)
+    logger.info("GIS provider: %s", app.state.geo_provider.name)
+    try:
+        yield
+    finally:
+        await app.state.geo_provider.aclose()
+        await app.state.geo_cache.aclose()
+        logger.info("Shutting down %s", settings.APP_NAME)
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:

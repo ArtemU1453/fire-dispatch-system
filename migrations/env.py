@@ -14,6 +14,7 @@ from alembic import context
 from geoalchemy2 import alembic_helpers
 from sqlalchemy import engine_from_config, pool
 
+import app.gis.models  # noqa: F401  (side-effect: registers GIS models)
 import app.models  # noqa: F401  (side-effect: registers models)
 from app.config import get_settings
 

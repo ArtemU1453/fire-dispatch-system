@@ -14,8 +14,10 @@ psycopg[binary]==3.2.3   # sync driver used by Alembic migrations
 GeoAlchemy2==0.16.0      # PostGIS geometry types for SQLAlchemy
 shapely==2.0.6           # geometry (de)serialization helper for GeoAlchemy2
 
+# --- HTTP client (GIS geocoding providers, runtime) ---
+httpx==0.28.1
+
 # --- Testing ---
 pytest==8.3.4
 pytest-asyncio==0.25.2
-httpx==0.28.1
 aiosqlite==0.20.0        # in-memory async DB for hermetic tests

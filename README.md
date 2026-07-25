@@ -76,6 +76,17 @@ PostGIS `geometry(Point/MultiPolygon, 4326)` columns with GiST indexes. All
 tables carry `id` (UUID), `created_at`, `updated_at` and `is_deleted`
 (soft-delete). See the data-model doc for details.
 
+### GIS geospatial core (Stage 3)
+
+An independent `app/gis/` module adds **geocoding, reverse geocoding, address
+normalization, a geographic gazetteer and PostGIS spatial queries**. Geocoding
+runs through a pluggable `GeoProvider` (Nominatim / Photon / Pelias / ArcGIS, and
+an offline Fake provider), swappable via `GIS_PROVIDER`. REST endpoints under
+`/api/v1`: `geocode`, `reverse-geocode`, `coordinates`, `validate-address`,
+`normalize-address`, plus `spatial/*` (distance, radius, bbox, polygon, area).
+Results are cached (Redis-ready interface) and every request is logged. See
+[`docs/gis.md`](docs/gis.md).
+
 ## Quick start with Docker Compose (recommended)
 
 Requires Docker and Docker Compose.
