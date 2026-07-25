@@ -150,6 +150,21 @@ REST under `/api/v1/routing` (`GET /route`, `POST /eta`, `POST /distance`,
 `GET /health`); provider outages return a clear 503. See
 [`docs/routing.md`](docs/routing.md).
 
+### Dispatcher workstation (Stage 8 · frontend)
+
+A React + TypeScript + Vite single-page app (`frontend/`) — the **dispatcher's
+workstation** and a **pure client** of the backend (no business logic on the
+client; the backend is used unchanged). A dispatcher can sign in, create a call
+card, enter an address (geocoded via GIS), see the incident on an interactive
+**Leaflet** map, get **recommendations**, view the **route** and **ETA**, pick
+units and confirm the composition. Built with Material UI, TanStack React Query
+(server state), Zustand (UI state), React Router and Axios; a bottom status bar
+shows the health of every backend engine. Client-side auth with an **RBAC-ready**
+role model, normalized error handling, code-splitting/lazy-loading, memoization
+and list virtualization. Tests with Vitest + React Testing Library. See
+[`docs/frontend.md`](docs/frontend.md) — run with `cd frontend && npm install &&
+npm run dev`.
+
 ## Quick start with Docker Compose (recommended)
 
 Requires Docker and Docker Compose.
