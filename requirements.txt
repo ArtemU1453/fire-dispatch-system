@@ -17,6 +17,9 @@ shapely==2.0.6           # geometry (de)serialization helper for GeoAlchemy2
 # --- HTTP client (GIS geocoding providers, runtime) ---
 httpx==0.28.1
 
+# --- Externalized dispatch rules (YAML) ---
+PyYAML==6.0.2
+
 # --- Testing ---
 pytest==8.3.4
 pytest-asyncio==0.25.2

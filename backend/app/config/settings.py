@@ -92,6 +92,10 @@ class Settings(BaseSettings):
     SEARCH_CACHE_TTL_SECONDS: int = 60
     SEARCH_CACHE_MAX_ENTRIES: int = 5000
 
+    # ----------------------------------------------------------- dispatch ----
+    # Path to the externalized dispatch rules file. Empty → bundled defaults.
+    DISPATCH_RULES_PATH: str | None = None
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:

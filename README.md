@@ -100,6 +100,19 @@ result caching. REST endpoints under `/api/v1`: `resources/search`,
 A `SelectionStrategy` seam leaves it ready for the next stage (automatic unit
 selection) with no engine changes. See [`docs/search.md`](docs/search.md).
 
+### Automatic dispatch recommendation (Stage 5)
+
+An `app/dispatch/` module forms a **recommended composition of forces and
+equipment** for an incident (address/coordinates + type + complexity) — the
+decision-support core. It geocodes the incident, looks up an **externalized rule**
+(YAML, edited without code changes), searches available resources via the Stage-4
+engine, **scores** them by configurable weights (distance, readiness, capability
+match, and an ETA seam for later), composes primary + reserve units, checks
+**capability sufficiency**, and returns a **confidence** and **reasons** for each
+choice. It is **advisory only** — it never dispatches, routes, or computes ETA.
+REST: `POST /dispatch/recommend`, `POST /dispatch/preview`, `GET /dispatch/rules`,
+`GET /dispatch/capabilities`. See [`docs/dispatch.md`](docs/dispatch.md).
+
 ## Quick start with Docker Compose (recommended)
 
 Requires Docker and Docker Compose.
