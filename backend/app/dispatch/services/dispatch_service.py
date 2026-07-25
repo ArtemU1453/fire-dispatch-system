@@ -1,77 +1,158 @@
 """DispatchService — API-facing orchestration.
 
-Resolves the incident location (coordinates or geocoded address via GIS), runs
-the DispatchEngine, and maps the domain recommendation to API schemas. Also
-exposes the rule and capability catalogs. Advisory only — nothing is dispatched.
+Validates the request, resolves the incident location (coordinates or geocoded
+address via GIS), runs the :class:`DispatchEngine`, persists the recommendation
+(with its full explanation and log) and maps it to API schemas. Also serves the
+recommendation retrieval and history endpoints. Advisory only — nothing is
+dispatched.
 """
 
 from __future__ import annotations
 
+from uuid import UUID
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.exceptions import ValidationError
-from app.dispatch.algorithms.scoring import ArrivalEstimator
-from app.dispatch.engine import DispatchEngine
-from app.dispatch.repositories import CandidateRepository
-from app.dispatch.rules import RuleEngine
+from app.core.exceptions import NotFoundError, ValidationError
+from app.dispatch.config import DispatchConfig
+from app.dispatch.engine import DispatchEngine, IncidentContext
+from app.dispatch.eta import ETAProvider
+from app.dispatch.repositories import CandidateRepository, RecommendationRepository
+from app.dispatch.requirements import RequirementSet
 from app.dispatch.schemas.requests import DispatchRequest
 from app.dispatch.schemas.responses import (
-    CapabilityInfo,
+    CapabilityResponse,
     DispatchResponse,
-    RuleResponse,
+    RecommendationHistoryItem,
+    RecommendationResponse,
 )
-from app.dispatch.utils.mapping import rule_to_response, to_dispatch_response
+from app.dispatch.utils.mapping import (
+    outcome_to_orm,
+    recommendation_to_history_item,
+    recommendation_to_response,
+)
+from app.dispatch.validators import DispatchValidator
 from app.gis.services.geocoding import GeocodingService
-from app.models.catalog import Capability
+from app.models.catalog import Capability, IncidentType
+from app.rules.engine import RuleEngine
+from app.rules.repositories import RuleRepository
 
 
 class DispatchService:
-    """Produces dispatch recommendations for the dispatcher."""
+    """Produces, stores and serves dispatch recommendations."""
 
     def __init__(
         self,
         session: AsyncSession,
-        rule_engine: RuleEngine,
         *,
         geocoding: GeocodingService | None = None,
-        arrival_estimator: ArrivalEstimator | None = None,
+        config: DispatchConfig | None = None,
+        eta_provider: ETAProvider | None = None,
     ) -> None:
         self._session = session
-        self._rules = rule_engine
         self._geocoding = geocoding
+        self._config = config or DispatchConfig()
+        self._validator = DispatchValidator()
+        self._recommendations = RecommendationRepository(session)
         self._engine = DispatchEngine(
+            RuleEngine(RuleRepository(session)),
             CandidateRepository(session),
-            rule_engine,
-            arrival_estimator=arrival_estimator,
+            config=self._config,
+            eta_provider=eta_provider,
         )
 
     async def recommend(
         self, request: DispatchRequest, *, preview: bool = False
     ) -> DispatchResponse:
-        if not self._rules.has_incident_type(request.incident_type):
-            raise ValidationError(f"Unknown incident type: {request.incident_type!r}")
+        self._validator.validate(request)
+        await self._ensure_incident_type(request.incident_type_id)
         latitude, longitude = await self._resolve_point(request)
-        recommendation = await self._engine.recommend(
-            incident_type=request.incident_type,
+
+        incident = IncidentContext(
+            incident_type_id=request.incident_type_id,
             latitude=latitude,
             longitude=longitude,
-            preview=preview,
+            complexity=(
+                request.complexity.value if request.complexity is not None else None
+            ),
+            time_of_day_hour=request.constraints.time_of_day_hour,
+            administrative_area_id=request.administrative_area_id,
+            object_type=request.object_type,
+            danger_level=request.danger_level,
+            flags=list(request.flags),
+            organization_ids=list(request.constraints.organization_ids),
+            excluded_resource_ids=set(request.constraints.excluded_resource_ids),
+            radius_override_meters=request.constraints.radius_meters,
         )
-        return to_dispatch_response(recommendation)
 
-    async def list_rules(self) -> list[RuleResponse]:
-        return [rule_to_response(rule) for rule in self._rules.incident_types()]
+        outcome = await self._engine.recommend(incident, preview=preview)
 
-    async def list_capabilities(self) -> list[CapabilityInfo]:
-        rows = await self._session.execute(
-            select(Capability).where(Capability.is_deleted.is_(False))
+        orm = outcome_to_orm(
+            outcome,
+            incident_id=request.incident_id,
+            complexity=request.complexity,
+            address=request.address,
+            administrative_area_id=request.administrative_area_id,
+            danger_level=request.danger_level,
+            request_snapshot=request.model_dump(mode="json"),
         )
-        return [
-            CapabilityInfo(
-                id=c.id, code=c.code, name=c.name, description=c.description
+        stored = await self._recommendations.add(orm)
+        required = await self._required_capabilities(outcome.requirements)
+        return DispatchResponse(
+            recommendation=recommendation_to_response(
+                stored, required_capabilities=required
             )
-            for c in rows.scalars().all()
+        )
+
+    async def get_recommendation(self, incident_id: UUID) -> RecommendationResponse:
+        """Latest (non-preview) recommendation for an incident."""
+        rec = await self._recommendations.latest_for_incident(incident_id)
+        if rec is None:
+            raise NotFoundError("No recommendation found for this incident")
+        return recommendation_to_response(rec)
+
+    async def get_history(
+        self, incident_id: UUID, *, limit: int = 50, offset: int = 0
+    ) -> list[RecommendationHistoryItem]:
+        rows = await self._recommendations.history_for_incident(
+            incident_id, limit=limit, offset=offset
+        )
+        return [recommendation_to_history_item(r) for r in rows]
+
+    # ---------------------------------------------------------- internals
+    async def _ensure_incident_type(self, incident_type_id: UUID) -> None:
+        row = await self._session.execute(
+            select(IncidentType.id).where(
+                IncidentType.id == incident_type_id,
+                IncidentType.is_deleted.is_(False),
+            )
+        )
+        if row.first() is None:
+            raise ValidationError(f"Unknown incident type: {incident_type_id}")
+
+    async def _required_capabilities(
+        self, requirements: RequirementSet
+    ) -> list[CapabilityResponse]:
+        codes = requirements.required_capability_codes
+        labels: dict[str, str] = {}
+        if codes:
+            rows = await self._session.execute(
+                select(Capability.code, Capability.name).where(
+                    Capability.code.in_(codes)
+                )
+            )
+            labels = {code: name for code, name in rows.all()}
+        return [
+            CapabilityResponse(
+                code=need.code,
+                min_quantity=need.min_quantity,
+                mandatory=need.mandatory,
+                label=labels.get(need.code),
+            )
+            for need in sorted(
+                requirements.capabilities.values(), key=lambda n: n.code
+            )
         ]
 
     async def _resolve_point(self, request: DispatchRequest) -> tuple[float, float]:

@@ -1,22 +1,19 @@
 """Recommendation scoring.
 
-Each candidate gets a 0..1 :class:`RecommendationScore` combining configurable
-sub-scores — **no coefficient is hard-coded**; every weight and threshold comes
-from the rule set (``ScoringConfig``).
-
-Components: distance, readiness, capability match, and (future) arrival time.
-Weights are renormalized over the *active* components, so the ``arrival_time``
-weight does not penalise anyone until a routing/ETA estimator is plugged in — the
-seam is :class:`ArrivalEstimator`, which returns ``None`` at this stage.
+Each candidate gets a 0..1 :class:`RecommendationScore` combining sub-scores —
+distance, readiness, capability match, and (future) arrival time. Weights come
+from :class:`DispatchConfig` and are renormalized over the *active* components,
+so the ``arrival_time`` weight penalises no one until an :class:`ETAProvider`
+returns a value (the routing stage).
 """
 
 from __future__ import annotations
 
 from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Protocol
 
-from app.dispatch.rules.models import ScoringConfig
+from app.dispatch.config import DispatchConfig
+from app.dispatch.eta import ETAProvider, NullETAProvider
 
 # Readiness states, ordered best-first.
 READY_DEPLOYABLE = "deployable"
@@ -33,37 +30,19 @@ class RecommendationScore:
     reasons: list[str] = field(default_factory=list)
 
 
-class ArrivalEstimator(Protocol):
-    """Seam for the next stage (routing / ETA / traffic).
-
-    Returns estimated arrival time in seconds, or ``None`` when unknown. The
-    scorer includes an arrival sub-score only when a value is available, so
-    plugging a real estimator in later needs no scorer change.
-    """
-
-    def estimate(self, distance_meters: float | None) -> float | None: ...
-
-
-class NullArrivalEstimator:
-    """Default estimator — no ETA yet (routing is a later stage)."""
-
-    def estimate(self, distance_meters: float | None) -> float | None:
-        return None
-
-
 class Scorer:
     """Turns candidate attributes into a :class:`RecommendationScore`."""
 
     def __init__(
         self,
-        config: ScoringConfig,
+        config: DispatchConfig,
         required_capabilities: Sequence[str] = (),
         *,
-        arrival_estimator: ArrivalEstimator | None = None,
+        eta_provider: ETAProvider | None = None,
     ) -> None:
         self._config = config
         self._required = list(required_capabilities)
-        self._arrival = arrival_estimator or NullArrivalEstimator()
+        self._eta = eta_provider or NullETAProvider()
 
     def score(
         self,
@@ -77,20 +56,15 @@ class Scorer:
         active_weights: dict[str, float] = {}
         reasons: list[str] = []
 
-        # --- distance -----------------------------------------------------
-        dist_score = self._distance_score(distance_meters)
-        components["distance"] = dist_score
+        components["distance"] = self._distance_score(distance_meters)
         active_weights["distance"] = weights.distance
         if distance_meters is not None:
             reasons.append(f"расстояние {round(distance_meters)} м")
 
-        # --- readiness ----------------------------------------------------
-        readiness_score = self._readiness_score(readiness)
-        components["readiness"] = readiness_score
+        components["readiness"] = self._readiness_score(readiness)
         active_weights["readiness"] = weights.readiness
         reasons.append(f"готовность: {readiness}")
 
-        # --- capability match --------------------------------------------
         cap_score, matched = self._capability_score(capabilities)
         components["capability_match"] = cap_score
         active_weights["capability_match"] = weights.capability_match
@@ -99,8 +73,7 @@ class Scorer:
                 "обеспечивает: " + (", ".join(matched) if matched else "—")
             )
 
-        # --- arrival time (only if available) ----------------------------
-        arrival = self._arrival.estimate(distance_meters)
+        arrival = self._eta.estimate(distance_meters)
         if arrival is not None:
             components["arrival_time"] = self._arrival_score(arrival)
             active_weights["arrival_time"] = weights.arrival_time
@@ -133,8 +106,8 @@ class Scorer:
         return len(matched) / len(self._required), matched
 
     def _arrival_score(self, arrival_seconds: float) -> float:
-        # Placeholder normalisation for when an estimator is present; the real
-        # curve arrives with the routing stage. Kept bounded to 0..1.
+        # Placeholder normalisation for when a provider is present; the real curve
+        # arrives with the routing stage. Bounded to 0..1.
         return max(0.0, min(1.0, 1.0 - arrival_seconds / 1800.0))
 
     @staticmethod
