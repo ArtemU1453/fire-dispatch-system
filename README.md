@@ -87,6 +87,19 @@ an offline Fake provider), swappable via `GIS_PROVIDER`. REST endpoints under
 Results are cached (Redis-ready interface) and every request is logged. See
 [`docs/gis.md`](docs/gis.md).
 
+### Universal resource search (Stage 4)
+
+An `app/search/` module provides one **universal Search Engine** over the core
+`Resource` entity — it finds any resource kind (station, vehicle, hydrant,
+hospital, police, …) with the same algorithm; the type is just a filter.
+Combinable filters (type, group/category, organization, availability, capability,
+station, vehicle/equipment type, working status, text/address), PostGIS spatial
+ops (`ST_DWithin`, KNN nearest, `ST_Within`, bbox), sorting, pagination and
+result caching. REST endpoints under `/api/v1`: `resources/search`,
+`resources/nearest`, `resources/radius`, `resources/filter`, `resources/{id}`.
+A `SelectionStrategy` seam leaves it ready for the next stage (automatic unit
+selection) with no engine changes. See [`docs/search.md`](docs/search.md).
+
 ## Quick start with Docker Compose (recommended)
 
 Requires Docker and Docker Compose.
