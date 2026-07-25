@@ -113,6 +113,22 @@ choice. It is **advisory only** — it never dispatches, routes, or computes ETA
 REST: `POST /dispatch/recommend`, `POST /dispatch/preview`, `GET /dispatch/rules`,
 `GET /dispatch/capabilities`. See [`docs/dispatch.md`](docs/dispatch.md).
 
+### Rule infrastructure (Stage 6)
+
+An `app/rules/` module stores dispatch norms **in the database, versioned** —
+never in code. Rules are grouped in categories/sets, scoped to incident types and
+complexity, carry **conditions** (applicability), **actions** (prescriptions) and
+structured **resource / capability requirements** described *by category and
+capability, never by concrete units*. A single **Rule Engine / `RuleService`**
+finds rules, evaluates their conditions, decides which apply and returns
+ready-made **minimum / recommended / reserve composition** and required
+capabilities. Every change creates a new **immutable published version** (exactly
+one active per rule, enforced by a partial unique index); all versions are kept
+and every lifecycle event is audited. It makes **no dispatch decision and selects
+no resource** — it is the norm store the next stage's algorithm reads from. REST
+under `/api/v1/rules` (list, get, by incident type, by category, versions,
+requirements, create, update, delete). See [`docs/rules.md`](docs/rules.md).
+
 ## Quick start with Docker Compose (recommended)
 
 Requires Docker and Docker Compose.
