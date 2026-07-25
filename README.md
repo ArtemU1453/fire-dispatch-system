@@ -100,18 +100,23 @@ result caching. REST endpoints under `/api/v1`: `resources/search`,
 A `SelectionStrategy` seam leaves it ready for the next stage (automatic unit
 selection) with no engine changes. See [`docs/search.md`](docs/search.md).
 
-### Automatic dispatch recommendation (Stage 5)
+### Dispatch Engine (Stage 5)
 
-An `app/dispatch/` module forms a **recommended composition of forces and
-equipment** for an incident (address/coordinates + type + complexity) — the
-decision-support core. It geocodes the incident, looks up an **externalized rule**
-(YAML, edited without code changes), searches available resources via the Stage-4
-engine, **scores** them by configurable weights (distance, readiness, capability
-match, and an ETA seam for later), composes primary + reserve units, checks
-**capability sufficiency**, and returns a **confidence** and **reasons** for each
-choice. It is **advisory only** — it never dispatches, routes, or computes ETA.
-REST: `POST /dispatch/recommend`, `POST /dispatch/preview`, `GET /dispatch/rules`,
-`GET /dispatch/capabilities`. See [`docs/dispatch.md`](docs/dispatch.md).
+The `app/dispatch/` module forms a **recommended composition of forces and
+equipment** for an incident (type + complexity + address/coordinates + dispatcher
+constraints) — the decision-support core. It geocodes the incident, gets the
+**active rules from the database Rule Engine**, consolidates the required
+capabilities and minimum/recommended/reserve composition, searches candidates via
+the Stage-4 Search Engine, **excludes** unavailable / out-of-zone / capability-
+lacking resources (each with a logged reason), **scores** the rest (distance,
+readiness, capability match, and an ETA seam for later), selects primary +
+reserve **by capability, not by unit name**, checks sufficiency, and returns a
+**confidence** and an **automatic explanation** for every choice. Recommendations,
+their coverage, the resource-match log and the decision audit are **persisted**.
+It is **advisory only** — it never dispatches, routes, computes ETA or uses AI.
+REST: `POST /dispatch/recommend`, `POST /dispatch/preview`,
+`GET /dispatch/{incident_id}`, `GET /dispatch/history/{incident_id}`. See
+[`docs/dispatch.md`](docs/dispatch.md).
 
 ### Rule infrastructure (Stage 6)
 
@@ -128,6 +133,22 @@ and every lifecycle event is audited. It makes **no dispatch decision and select
 no resource** — it is the norm store the next stage's algorithm reads from. REST
 under `/api/v1/rules` (list, get, by incident type, by category, versions,
 requirements, create, update, delete). See [`docs/rules.md`](docs/rules.md).
+
+### Routing & ETA (Stage 7)
+
+An independent `app/routing/` module builds routes, computes travel distance and
+estimates **time of arrival** between two points behind a single
+**`RoutingProvider`** interface — so any backend (OSRM now; GraphHopper, Valhalla,
+OpenRouteService or a commercial API later) plugs in through configuration. Ships
+a dependency-free straight-line estimator (the default, works with no external
+server), an **OSRM** HTTP provider, and a **fallback chain** that keeps working
+when a backend is down. `RouteService` builds routes/geometry/waypoints;
+`ETAService` (ETA only) is the entry point the Dispatch Engine will use via its
+ETA seam — **without modifying the Dispatch Engine**. Route reuse is cached
+in-memory (Redis-ready, no Redis yet). No traffic, closures, AI or auto-dispatch.
+REST under `/api/v1/routing` (`GET /route`, `POST /eta`, `POST /distance`,
+`GET /health`); provider outages return a clear 503. See
+[`docs/routing.md`](docs/routing.md).
 
 ## Quick start with Docker Compose (recommended)
 

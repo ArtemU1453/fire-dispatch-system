@@ -1,10 +1,12 @@
 """Candidate retrieval for dispatch.
 
-Reuses the Stage-4 SearchEngine/SearchRepository to fetch available resources
-near the incident (honouring the rule's categories, radius, capability and
-exclusion filters), then batch-loads each candidate's capabilities in a single
-query — no N+1. Resolving capability/status *codes* (from the rules) to ids is
-also done here.
+Reuses the Stage-4 SearchEngine / SearchRepository to fetch resources near the
+incident (by resource category and radius), then batch-loads each candidate's
+capabilities and service zones (coverage areas) in single queries — no N+1.
+
+Availability, capability and service-zone *filtering* is deliberately **not**
+done here: the engine applies it so every exclusion can be explained and logged.
+An optional organization requirement is pushed down to the search for efficiency.
 """
 
 from __future__ import annotations
@@ -12,14 +14,15 @@ from __future__ import annotations
 from collections.abc import Sequence
 from uuid import UUID
 
-from sqlalchemy import Select, and_, select
+from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dispatch.algorithms.candidate import DispatchCandidate
-from app.dispatch.rules.models import IncidentRule
 from app.dispatch.utils.readiness import readiness_of
-from app.models.catalog import AvailabilityStatus, Capability
-from app.models.resource import Resource, ResourceCapability
+from app.models.catalog import Capability
+from app.models.enums import ResourceCategory
+from app.models.geo import CoverageArea
+from app.models.resource import ResourceCapability
 from app.search.criteria import (
     GeoPoint,
     Pagination,
@@ -30,30 +33,11 @@ from app.search.criteria import (
 )
 from app.search.engine import SearchEngine
 from app.search.filters import (
-    CapabilityFilter,
+    OrganizationFilter,
     ResourceFilter,
     ResourceGroupFilter,
-    WorkingStatusFilter,
 )
 from app.search.repositories import SearchRepository
-
-
-class _ExcludeStatusFilter(ResourceFilter):
-    """Excludes resources whose availability status is in the excluded set."""
-
-    def __init__(self, status_ids: Sequence[UUID]) -> None:
-        self._ids = list(status_ids)
-
-    def is_active(self) -> bool:
-        return bool(self._ids)
-
-    def apply(self, stmt: Select) -> Select:
-        if not self._ids:
-            return stmt
-        return stmt.where(
-            (Resource.availability_status_id.is_(None))
-            | (Resource.availability_status_id.notin_(self._ids))
-        )
 
 
 class CandidateRepository:
@@ -62,59 +46,44 @@ class CandidateRepository:
         self._engine = SearchEngine()
         self._search = SearchRepository(session)
 
-    async def resolve_capability_ids(
+    async def resolve_capability_labels(
         self, codes: Sequence[str]
-    ) -> dict[str, UUID]:
+    ) -> dict[str, str]:
         if not codes:
             return {}
         rows = await self._session.execute(
-            select(Capability.code, Capability.id).where(Capability.code.in_(codes))
+            select(Capability.code, Capability.name).where(
+                Capability.code.in_(list(codes))
+            )
         )
-        return {code: cid for code, cid in rows.all()}
-
-    async def resolve_status_ids(self, codes: Sequence[str]) -> list[UUID]:
-        if not codes:
-            return []
-        rows = await self._session.execute(
-            select(AvailabilityStatus.id).where(AvailabilityStatus.code.in_(codes))
-        )
-        return [r for (r,) in rows.all()]
+        return {code: name for code, name in rows.all()}
 
     async def fetch_candidates(
-        self, point: GeoPoint, rule: IncidentRule, exclusions
+        self,
+        point: GeoPoint,
+        *,
+        categories: Sequence[ResourceCategory],
+        radius_meters: float,
+        limit: int,
+        organization_ids: Sequence[UUID] = (),
     ) -> list[DispatchCandidate]:
-        required_codes = [c.code for c in rule.required_capabilities]
-        cap_ids_by_code = await self.resolve_capability_ids(required_codes)
-        excluded_status_ids = await self.resolve_status_ids(
-            exclusions.excluded_status_codes
-        )
-
-        filters: list[ResourceFilter] = [
-            ResourceGroupFilter(rule.resource_categories),
-            WorkingStatusFilter(
-                is_active=True if exclusions.require_active else None,
-                operational=True if exclusions.require_operational else None,
-                deployable=True if exclusions.require_deployable else None,
-            ),
-            _ExcludeStatusFilter(excluded_status_ids),
-        ]
-        if cap_ids_by_code:
-            filters.append(
-                CapabilityFilter(list(cap_ids_by_code.values()), match_all=False)
-            )
+        filters: list[ResourceFilter] = []
+        if categories:
+            filters.append(ResourceGroupFilter(list(categories)))
+        if organization_ids:
+            filters.append(OrganizationFilter(list(organization_ids)))
 
         criteria = SearchCriteria(
             filters=filters,
-            spatial=SpatialConstraint(
-                point=point, radius_meters=rule.search_radius_meters
-            ),
+            spatial=SpatialConstraint(point=point, radius_meters=radius_meters),
             sort=[SortSpec(SortField.DISTANCE)],
-            pagination=Pagination(limit=rule.candidate_limit, offset=0),
+            pagination=Pagination(limit=limit, offset=0),
         )
         result = await self._search.execute(self._engine.build(criteria))
 
         resource_ids = [c.resource.id for c in result.candidates]
         capabilities = await self._load_capabilities(resource_ids)
+        service_areas = await self._load_service_areas(resource_ids)
 
         return [
             DispatchCandidate(
@@ -122,6 +91,7 @@ class CandidateRepository:
                 distance_meters=c.distance_meters,
                 readiness=readiness_of(c.resource),
                 capabilities=capabilities.get(c.resource.id, {}),
+                service_area_ids=service_areas.get(c.resource.id, set()),
             )
             for c in result.candidates
         ]
@@ -140,7 +110,7 @@ class CandidateRepository:
             .join(Capability, Capability.id == ResourceCapability.capability_id)
             .where(
                 and_(
-                    ResourceCapability.resource_id.in_(resource_ids),
+                    ResourceCapability.resource_id.in_(list(resource_ids)),
                     ResourceCapability.is_deleted.is_(False),
                 )
             )
@@ -148,4 +118,23 @@ class CandidateRepository:
         out: dict[UUID, dict[str, int]] = {}
         for resource_id, code, quantity in rows.all():
             out.setdefault(resource_id, {})[code] = quantity
+        return out
+
+    async def _load_service_areas(
+        self, resource_ids: Sequence[UUID]
+    ) -> dict[UUID, set[UUID]]:
+        if not resource_ids:
+            return {}
+        rows = await self._session.execute(
+            select(CoverageArea.resource_id, CoverageArea.administrative_area_id).where(
+                and_(
+                    CoverageArea.resource_id.in_(list(resource_ids)),
+                    CoverageArea.administrative_area_id.is_not(None),
+                    CoverageArea.is_deleted.is_(False),
+                )
+            )
+        )
+        out: dict[UUID, set[UUID]] = {}
+        for resource_id, area_id in rows.all():
+            out.setdefault(resource_id, set()).add(area_id)
         return out

@@ -19,10 +19,12 @@ from app.api.v1.router import api_router
 from app.config import Settings, get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging, get_logger
-from app.dispatch.rules import FileRuleProvider, RuleEngine
 from app.gis.cache import create_cache
 from app.gis.providers import create_provider
 from app.middleware import RequestContextMiddleware
+from app.routing.config import RoutingConfig
+from app.routing.providers import create_provider as create_routing_provider
+from app.routing.repositories import create_route_cache
 from app.search.cache import create_search_cache
 
 logger = get_logger(__name__)
@@ -43,13 +45,19 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.geo_provider = create_provider(settings)
     app.state.geo_cache = create_cache(settings)
     app.state.search_cache = create_search_cache(settings)
-    # Dispatch rules loaded once (edit the file + reload() to change at runtime).
-    app.state.rule_engine = RuleEngine(FileRuleProvider(settings.DISPATCH_RULES_PATH))
-    app.state.rule_engine.reload()
+    # Dispatch norms now live in the database (Rule Engine); nothing to preload.
+    # Routing provider + route-reuse cache (shared, created once).
+    routing_config = RoutingConfig.from_settings(settings)
+    app.state.route_provider = create_routing_provider(routing_config)
+    app.state.route_cache = create_route_cache(
+        backend=routing_config.cache_backend,
+        ttl_seconds=routing_config.cache_ttl_seconds,
+        max_entries=routing_config.cache_max_entries,
+    )
     logger.info(
-        "GIS provider: %s | dispatch rules: %d incident types",
+        "GIS provider: %s | routing provider: %s",
         app.state.geo_provider.name,
-        len(app.state.rule_engine.incident_types()),
+        app.state.route_provider.name,
     )
     try:
         yield
@@ -57,6 +65,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await app.state.geo_provider.aclose()
         await app.state.geo_cache.aclose()
         await app.state.search_cache.aclose()
+        await app.state.route_provider.aclose()
+        await app.state.route_cache.aclose()
         logger.info("Shutting down %s", settings.APP_NAME)
 
 

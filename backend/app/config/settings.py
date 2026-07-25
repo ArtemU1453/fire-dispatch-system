@@ -92,9 +92,21 @@ class Settings(BaseSettings):
     SEARCH_CACHE_TTL_SECONDS: int = 60
     SEARCH_CACHE_MAX_ENTRIES: int = 5000
 
-    # ----------------------------------------------------------- dispatch ----
-    # Path to the externalized dispatch rules file. Empty → bundled defaults.
-    DISPATCH_RULES_PATH: str | None = None
+    # ------------------------------------------------------------ routing ----
+    # Routing / ETA. Default provider is the dependency-free straight-line
+    # estimator so the module works out of the box; set ROUTING_OSRM_URL to use
+    # OSRM (with automatic fallback to the estimator when it is unavailable).
+    ROUTING_PROVIDER: Literal["haversine", "osrm"] = "haversine"
+    ROUTING_OSRM_URL: str | None = None
+    ROUTING_HTTP_TIMEOUT: float = 8.0
+    # Straight-line estimator parameters.
+    ROUTING_AVERAGE_SPEED_KMH: float = 50.0
+    ROUTING_ROAD_FACTOR: float = 1.3  # detour factor applied to straight-line distance
+    ROUTING_ENABLE_FALLBACK: bool = True
+    # Route reuse cache (in-memory; Redis-ready abstraction, not wired yet).
+    ROUTING_CACHE_BACKEND: Literal["memory", "none"] = "memory"
+    ROUTING_CACHE_TTL_SECONDS: int = 120
+    ROUTING_CACHE_MAX_ENTRIES: int = 2000
 
     @computed_field  # type: ignore[prop-decorator]
     @property

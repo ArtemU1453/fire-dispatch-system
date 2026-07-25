@@ -1,27 +1,30 @@
 """Dispatch API schemas."""
 
-from app.dispatch.schemas.requests import DispatchRequest
+from app.dispatch.schemas.requests import DispatchConstraints, DispatchRequest
 from app.dispatch.schemas.responses import (
     CapabilityCoverageItem,
-    CapabilityInfo,
-    CapabilityRequirement,
+    CapabilityResponse,
     DispatchPoint,
     DispatchResponse,
-    Recommendation,
+    RecommendationHistoryItem,
     RecommendationItem,
+    RecommendationResponse,
+    RecommendationSummaryResponse,
     RefLabel,
-    RuleResponse,
+    ResourceMatchResponse,
 )
 
 __all__ = [
+    "CapabilityCoverageItem",
+    "CapabilityResponse",
+    "DispatchConstraints",
+    "DispatchPoint",
     "DispatchRequest",
     "DispatchResponse",
-    "Recommendation",
+    "RecommendationHistoryItem",
     "RecommendationItem",
-    "CapabilityRequirement",
-    "CapabilityCoverageItem",
-    "CapabilityInfo",
-    "RuleResponse",
-    "DispatchPoint",
+    "RecommendationResponse",
+    "RecommendationSummaryResponse",
     "RefLabel",
+    "ResourceMatchResponse",
 ]

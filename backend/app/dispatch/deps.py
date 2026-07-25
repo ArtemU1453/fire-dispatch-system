@@ -4,28 +4,20 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import Depends, Request
+from fastapi import Depends
 
 from app.api.deps import SessionDep
-from app.dispatch.rules import RuleEngine
 from app.dispatch.services import DispatchService
 from app.gis.deps import GeocodingServiceDep
 
 
-def get_rule_engine(request: Request) -> RuleEngine:
-    """Return the process-wide RuleEngine from app state."""
-    return request.app.state.rule_engine
-
-
-RuleEngineDep = Annotated[RuleEngine, Depends(get_rule_engine)]
-
-
 def get_dispatch_service(
     session: SessionDep,
-    rule_engine: RuleEngineDep,
     geocoding: GeocodingServiceDep,
 ) -> DispatchService:
-    return DispatchService(session, rule_engine, geocoding=geocoding)
+    # The ETA provider is intentionally omitted at this stage (routing is a later
+    # stage); the engine defaults to the null provider.
+    return DispatchService(session, geocoding=geocoding)
 
 
 DispatchServiceDep = Annotated[DispatchService, Depends(get_dispatch_service)]

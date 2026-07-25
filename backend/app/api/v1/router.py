@@ -12,6 +12,7 @@ from fastapi import APIRouter
 from app.api.v1.endpoints import health
 from app.dispatch.router import dispatch_router
 from app.gis.router import gis_router
+from app.routing.router import routing_router
 from app.rules.router import rules_router
 from app.search.router import search_router
 
@@ -21,3 +22,4 @@ api_router.include_router(gis_router)
 api_router.include_router(search_router)
 api_router.include_router(dispatch_router)
 api_router.include_router(rules_router)
+api_router.include_router(routing_router)
