@@ -86,6 +86,12 @@ class Settings(BaseSettings):
     GIS_CACHE_MAX_ENTRIES: int = 10000
     GIS_REDIS_URL: str | None = None
 
+    # ------------------------------------------------------------- search ----
+    # Result caching for the search engine (same Redis-ready abstraction).
+    SEARCH_CACHE_BACKEND: Literal["memory", "none"] = "memory"
+    SEARCH_CACHE_TTL_SECONDS: int = 60
+    SEARCH_CACHE_MAX_ENTRIES: int = 5000
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:

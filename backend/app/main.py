@@ -22,6 +22,7 @@ from app.core.logging import configure_logging, get_logger
 from app.gis.cache import create_cache
 from app.gis.providers import create_provider
 from app.middleware import RequestContextMiddleware
+from app.search.cache import create_search_cache
 
 logger = get_logger(__name__)
 
@@ -36,16 +37,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         settings.APP_VERSION,
         settings.APP_ENV,
     )
-    # GIS provider and cache are created once and shared across requests
+    # GIS provider and caches are created once and shared across requests
     # (avoids per-request HTTP client creation). Exposed via app.state.
     app.state.geo_provider = create_provider(settings)
     app.state.geo_cache = create_cache(settings)
+    app.state.search_cache = create_search_cache(settings)
     logger.info("GIS provider: %s", app.state.geo_provider.name)
     try:
         yield
     finally:
         await app.state.geo_provider.aclose()
         await app.state.geo_cache.aclose()
+        await app.state.search_cache.aclose()
         logger.info("Shutting down %s", settings.APP_NAME)
 
 
