@@ -1,0 +1,172 @@
+# =========================================================================
+# AI Dispatcher МЧС — dispatch rules (externalized; edit without code changes).
+#
+# Every coefficient the algorithm uses lives here. Add a new incident type by
+# adding an entry under `incident_types` — no code change required. Capability
+# and status codes reference the catalog rows (Capability.code /
+# AvailabilityStatus.code) created in the data model.
+# =========================================================================
+version: "1"
+
+# ------------------------------------------------------------------ scoring --
+scoring:
+  weights:            # relative importance of each score component
+    distance: 0.5
+    readiness: 0.2
+    capability_match: 0.2
+    arrival_time: 0.1   # used only when an arrival estimate is available
+  readiness_scores:   # 0..1 sub-score by availability state
+    deployable: 1.0
+    operational: 0.5
+    other: 0.0
+  max_distance_meters: 50000.0   # distance sub-score decays linearly to 0 here
+  confidence:
+    high_threshold: 0.85
+    medium_threshold: 0.5
+
+# --------------------------------------------------------------- exclusions --
+exclusions:
+  require_active: true
+  require_operational: true
+  require_deployable: true
+  excluded_status_codes:
+    - maintenance
+    - out_of_service
+    - busy
+    - reserved
+
+# ------------------------------------------------------------ incident types --
+incident_types:
+  fire:
+    code: fire
+    name: Пожар
+    priority: 1
+    resource_categories: [vehicle, personnel]
+    required_capabilities:
+      - {code: fire_suppression, min_quantity: 2, label: Пожаротушение}
+      - {code: water_supply, min_quantity: 1, label: Водоснабжение}
+    minimum_units: 2
+    recommended_units: 4
+    reserve_units: 2
+    search_radius_meters: 30000.0
+    candidate_limit: 100
+
+  forest_fire:
+    code: forest_fire
+    name: Лесной пожар
+    priority: 1
+    resource_categories: [vehicle, personnel]
+    required_capabilities:
+      - {code: fire_suppression, min_quantity: 3, label: Пожаротушение}
+      - {code: water_supply, min_quantity: 2, label: Водоснабжение}
+    minimum_units: 3
+    recommended_units: 6
+    reserve_units: 3
+    search_radius_meters: 80000.0
+    candidate_limit: 200
+
+  dtp:
+    code: dtp
+    name: ДТП
+    priority: 2
+    resource_categories: [vehicle, personnel]
+    required_capabilities:
+      - {code: rescue_tools, min_quantity: 1, label: Аварийно-спасательный инструмент}
+      - {code: medical_aid, min_quantity: 1, label: Медицинская помощь}
+    minimum_units: 1
+    recommended_units: 2
+    reserve_units: 1
+    search_radius_meters: 30000.0
+    candidate_limit: 80
+
+  smoke:
+    code: smoke
+    name: Задымление
+    priority: 3
+    resource_categories: [vehicle]
+    required_capabilities:
+      - {code: fire_suppression, min_quantity: 1, label: Пожаротушение}
+      - {code: ventilation, min_quantity: 1, label: Дымоудаление}
+    minimum_units: 1
+    recommended_units: 2
+    reserve_units: 1
+    search_radius_meters: 25000.0
+    candidate_limit: 60
+
+  chemical:
+    code: chemical
+    name: Химическая авария
+    priority: 1
+    resource_categories: [vehicle, personnel, equipment]
+    required_capabilities:
+      - {code: hazmat, min_quantity: 1, label: Химзащита}
+      - {code: fire_suppression, min_quantity: 1, label: Пожаротушение}
+    minimum_units: 2
+    recommended_units: 3
+    reserve_units: 2
+    search_radius_meters: 50000.0
+    candidate_limit: 100
+
+  gas_leak:
+    code: gas_leak
+    name: Утечка газа
+    priority: 2
+    resource_categories: [vehicle, personnel]
+    required_capabilities:
+      - {code: gas_safety, min_quantity: 1, label: Газовая безопасность}
+    minimum_units: 1
+    recommended_units: 2
+    reserve_units: 1
+    search_radius_meters: 30000.0
+    candidate_limit: 60
+
+  collapse:
+    code: collapse
+    name: Обрушение
+    priority: 1
+    resource_categories: [vehicle, personnel, equipment]
+    required_capabilities:
+      - {code: heavy_rescue, min_quantity: 1, label: Тяжёлые спасательные работы}
+      - {code: medical_aid, min_quantity: 1, label: Медицинская помощь}
+    minimum_units: 2
+    recommended_units: 4
+    reserve_units: 2
+    search_radius_meters: 50000.0
+    candidate_limit: 120
+
+  rescue:
+    code: rescue
+    name: Спасательные работы
+    priority: 2
+    resource_categories: [vehicle, personnel]
+    required_capabilities:
+      - {code: rescue_tools, min_quantity: 1, label: Аварийно-спасательный инструмент}
+    minimum_units: 1
+    recommended_units: 2
+    reserve_units: 1
+    search_radius_meters: 40000.0
+    candidate_limit: 80
+
+  false_alarm:
+    code: false_alarm
+    name: Ложный вызов
+    priority: 4
+    resource_categories: [vehicle]
+    required_capabilities: []
+    minimum_units: 1
+    recommended_units: 1
+    reserve_units: 0
+    search_radius_meters: 20000.0
+    candidate_limit: 30
+
+  other:
+    code: other
+    name: Прочие
+    priority: 3
+    resource_categories: [vehicle]
+    required_capabilities: []
+    minimum_units: 1
+    recommended_units: 2
+    reserve_units: 1
+    search_radius_meters: 30000.0
+    candidate_limit: 60

@@ -19,6 +19,7 @@ from app.api.v1.router import api_router
 from app.config import Settings, get_settings
 from app.core.exceptions import register_exception_handlers
 from app.core.logging import configure_logging, get_logger
+from app.dispatch.rules import FileRuleProvider, RuleEngine
 from app.gis.cache import create_cache
 from app.gis.providers import create_provider
 from app.middleware import RequestContextMiddleware
@@ -42,7 +43,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.geo_provider = create_provider(settings)
     app.state.geo_cache = create_cache(settings)
     app.state.search_cache = create_search_cache(settings)
-    logger.info("GIS provider: %s", app.state.geo_provider.name)
+    # Dispatch rules loaded once (edit the file + reload() to change at runtime).
+    app.state.rule_engine = RuleEngine(FileRuleProvider(settings.DISPATCH_RULES_PATH))
+    app.state.rule_engine.reload()
+    logger.info(
+        "GIS provider: %s | dispatch rules: %d incident types",
+        app.state.geo_provider.name,
+        len(app.state.rule_engine.incident_types()),
+    )
     try:
         yield
     finally:
