@@ -63,6 +63,29 @@ class Settings(BaseSettings):
     # --------------------------------------------------------------- cors ----
     CORS_ORIGINS: list[str] = Field(default_factory=lambda: ["*"])
 
+    # ---------------------------------------------------------------- gis ----
+    # Active geocoding provider (nominatim | photon | pelias | arcgis | fake).
+    GIS_PROVIDER: str = "nominatim"
+    GIS_HTTP_TIMEOUT: float = 10.0
+    GIS_USER_AGENT: str = "ai-dispatcher-mchs/0.1 (+https://example.local)"
+    # Default locale / country bias for geocoding requests.
+    GIS_DEFAULT_LANGUAGE: str = "ru"
+    GIS_DEFAULT_COUNTRY_CODES: list[str] = Field(default_factory=lambda: ["ru"])
+    # Provider endpoints (overridable to point at self-hosted instances).
+    GIS_NOMINATIM_URL: str = "https://nominatim.openstreetmap.org"
+    GIS_PHOTON_URL: str = "https://photon.komoot.io"
+    GIS_PELIAS_URL: str = "https://api.geocode.earth/v1"
+    GIS_PELIAS_API_KEY: str | None = None
+    GIS_ARCGIS_URL: str = (
+        "https://geocode-api.arcgis.com/arcgis/rest/services/World/GeocodeServer"
+    )
+    GIS_ARCGIS_TOKEN: str | None = None
+    # Caching (Redis-ready; "memory" or "none" for now — Redis wired later).
+    GIS_CACHE_BACKEND: Literal["memory", "none"] = "memory"
+    GIS_CACHE_TTL_SECONDS: int = 86400
+    GIS_CACHE_MAX_ENTRIES: int = 10000
+    GIS_REDIS_URL: str | None = None
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
