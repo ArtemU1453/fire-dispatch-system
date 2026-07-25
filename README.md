@@ -134,6 +134,22 @@ no resource** — it is the norm store the next stage's algorithm reads from. RE
 under `/api/v1/rules` (list, get, by incident type, by category, versions,
 requirements, create, update, delete). See [`docs/rules.md`](docs/rules.md).
 
+### Routing & ETA (Stage 7)
+
+An independent `app/routing/` module builds routes, computes travel distance and
+estimates **time of arrival** between two points behind a single
+**`RoutingProvider`** interface — so any backend (OSRM now; GraphHopper, Valhalla,
+OpenRouteService or a commercial API later) plugs in through configuration. Ships
+a dependency-free straight-line estimator (the default, works with no external
+server), an **OSRM** HTTP provider, and a **fallback chain** that keeps working
+when a backend is down. `RouteService` builds routes/geometry/waypoints;
+`ETAService` (ETA only) is the entry point the Dispatch Engine will use via its
+ETA seam — **without modifying the Dispatch Engine**. Route reuse is cached
+in-memory (Redis-ready, no Redis yet). No traffic, closures, AI or auto-dispatch.
+REST under `/api/v1/routing` (`GET /route`, `POST /eta`, `POST /distance`,
+`GET /health`); provider outages return a clear 503. See
+[`docs/routing.md`](docs/routing.md).
+
 ## Quick start with Docker Compose (recommended)
 
 Requires Docker and Docker Compose.
