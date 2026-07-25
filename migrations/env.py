@@ -16,6 +16,7 @@ from sqlalchemy import engine_from_config, pool
 
 import app.gis.models  # noqa: F401  (side-effect: registers GIS models)
 import app.models  # noqa: F401  (side-effect: registers models)
+import app.rules.models  # noqa: F401  (side-effect: registers rules models)
 from app.config import get_settings
 
 # Import Base and ensure all models are registered on its metadata.
