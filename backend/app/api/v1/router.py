@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
+from app.admin.router import admin_router
 from app.ai.router import ai_router
 from app.api.v1.endpoints import health
 from app.calls.router import calls_router
@@ -34,3 +35,4 @@ api_router.include_router(routing_router)
 api_router.include_router(incidents_router)
 api_router.include_router(calls_router)
 api_router.include_router(ai_router)
+api_router.include_router(admin_router)

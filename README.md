@@ -245,6 +245,26 @@ dispatcher always decides. REST under `/api/v1/ai`: `transcribe`, `extract`,
 `classify`, `summarize`, `analyze`, `calls/{id}/analyze`, `providers`, `health`,
 `audit`. See [`docs/ai.md`](docs/ai.md).
 
+### Administration platform (Stage 13)
+
+An `app/admin/` module is the single **administration platform** — managing
+**users, roles and permissions (RBAC)**, system **settings**, **directories**
+(catalogs), **integrations** and audit-log views. It **reuses** the Stage-2 RBAC
+tables (`users` / `roles` / `permissions`) and the existing `audit_logs` trail
+**unchanged**, adding 12 tables around them (permission groups, account statuses,
+sessions, password policies, auth methods, versioned settings + history,
+integrations + providers + configs + health checks). **RBAC** resolves a user's
+permissions through roles (superuser bypass); passwords are PBKDF2-hashed and
+validated against a configurable **password policy**; **settings** are typed,
+categorised and **versioned with full history**; **directories** let catalogs be
+edited as data without code; **integrations** never store secrets in clear text
+(masked, referenced via a `secret_ref`); external auth (LDAP/AD/OIDC/SAML) is
+represented but **not implemented** (no SSO/2FA). Every change is **audited**
+(who / when / old → new / reason). REST under `/api/v1/admin`: `users`, `roles`,
+`permissions`, `settings` (+ history), `directories`, `integrations` (+ health),
+`audit`, `ai/providers`. Contains no dispatch logic and modifies no existing
+business module. See [`docs/admin.md`](docs/admin.md).
+
 ## Quick start with Docker Compose (recommended)
 
 Requires Docker and Docker Compose.
