@@ -225,6 +225,26 @@ telephony actions and `provider/health`. No real telephony, recording, speech
 recognition or AI — seams left for the next (AI) stage. See
 [`docs/calls.md`](docs/calls.md).
 
+### AI Services platform (Stage 12)
+
+An `app/ai/` module is a **platform** that unifies the system's intelligent
+services — **transcription, entity extraction, incident classification,
+summarisation and combined analysis** — behind one abstraction layer. Every
+backend implements a single **`AIProvider`** interface (`transcribe` /
+`extract_entities` / `classify_incident` / `summarize` / `analyze` /
+`health_check`), so **replacing the AI model never touches business logic**; a
+**registry** lets several providers be connected at once and selected per request
+(OpenAI / Azure / local LLM / ASR). The only implementation now is a fully working
+**`MockAIProvider`** (offline, deterministic Russian keyword/regex heuristics).
+Each result carries its **confidence, model, model version and processing time**,
+and every call is **audited** (metadata only — prompts and call text are never
+stored). Integration is **read-only and advisory**: `CallAnalysisPipeline` reads a
+call's transcript and returns a suggestion bundle; the AI **never** changes an
+incident, dispatches units, edits rules or changes resource statuses — the
+dispatcher always decides. REST under `/api/v1/ai`: `transcribe`, `extract`,
+`classify`, `summarize`, `analyze`, `calls/{id}/analyze`, `providers`, `health`,
+`audit`. See [`docs/ai.md`](docs/ai.md).
+
 ## Quick start with Docker Compose (recommended)
 
 Requires Docker and Docker Compose.

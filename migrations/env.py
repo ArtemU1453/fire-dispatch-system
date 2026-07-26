@@ -14,6 +14,7 @@ from alembic import context
 from geoalchemy2 import alembic_helpers
 from sqlalchemy import engine_from_config, pool
 
+import app.ai.models  # noqa: F401  (side-effect: registers AI audit model)
 import app.calls.models  # noqa: F401  (side-effect: registers call models)
 import app.dispatch.models  # noqa: F401  (side-effect: registers dispatch models)
 import app.gis.models  # noqa: F401  (side-effect: registers GIS models)
