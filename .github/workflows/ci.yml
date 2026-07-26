@@ -1,0 +1,80 @@
+# =========================================================================
+# Example CI pipeline (Stage 16 §7).
+#
+# This is a REFERENCE implementation on GitHub Actions. The architecture is NOT
+# tied to it: every step is a thin wrapper over the platform-agnostic Makefile /
+# scripts, so the same pipeline runs unchanged on GitLab CI, Jenkins, TeamCity,
+# etc. Port it by calling the same `make` targets.
+#
+# Stages covered: static analysis, automated tests (incl. PostgreSQL/PostGIS
+# integration), migration round-trip/drift check, and container build.
+# =========================================================================
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: "3.13"
+
+jobs:
+  lint:
+    name: Static analysis (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install ruff
+        run: python -m pip install --upgrade pip ruff
+      - name: Lint
+        run: ruff check backend tests
+
+  test:
+    name: Tests + migrations (PostgreSQL)
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgis/postgis:16-3.4
+        env:
+          POSTGRES_USER: dispatcher
+          POSTGRES_PASSWORD: dispatcher
+          POSTGRES_DB: dispatcher
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dispatcher -d dispatcher"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: dispatcher
+      POSTGRES_PASSWORD: dispatcher
+      POSTGRES_DB: dispatcher
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Apply migrations
+        run: alembic upgrade head
+      - name: Migration round-trip + drift check
+        run: bash scripts/verify/check_migrations.sh
+      - name: Run test suite
+        run: python -m pytest -ra -q
+
+  container:
+    name: Container build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t dispatcher-api:ci .
