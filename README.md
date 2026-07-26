@@ -395,7 +395,35 @@ pytest
 All settings are read from environment variables / `.env` and validated at
 startup by `app/config/settings.py`. See [`.env.example`](.env.example) for the
 full list. Nothing in the code reads `os.environ` directly — always go through
-`get_settings()`.
+`get_settings()`. Secrets are resolved through the
+[`app.config.secrets`](backend/app/config/secrets/) provider abstraction and are
+never committed to the repository — see
+[`docs/production/secrets.md`](docs/production/secrets.md).
+
+## Production operation
+
+Operational documentation for running the system in production lives in
+[`docs/production/`](docs/production/) (index:
+[`docs/production/README.md`](docs/production/README.md)). It covers
+configuration & environments, secrets, backup & retention, disaster recovery,
+scaling, containerization, CI/CD, migrations, performance/load testing, a
+security audit, integrations readiness, and the developer/admin/dispatcher/
+install/upgrade/maintenance guides. See also the
+[readiness checklist](docs/readiness-checklist.md) and the
+[final readiness report](docs/production-readiness-report.md).
+
+Operational tooling:
+
+- **`Makefile`** — platform-agnostic build/test/lint/migrate/container targets
+  (`make help`).
+- **`scripts/backup/`** — database/config/logs/uploads backup, restore, retention.
+- **`scripts/verify/`** — migration verification (`check_migrations.sh`) and
+  automated readiness checks (`verify_readiness.sh`).
+- **`scripts/perf/loadtest.py`** — load/stress/soak/recovery harness.
+- **`scripts/healthcheck.sh`** — liveness/readiness probe.
+- **`.github/workflows/ci.yml`** — reference CI pipeline (lint, tests, migration
+  checks, container build) over the same Makefile targets.
+- **`deploy/env/*.example`** — per-environment configuration templates.
 
 ## License
 

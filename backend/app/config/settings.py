@@ -34,7 +34,11 @@ class Settings(BaseSettings):
 
     # ----------------------------------------------------------------- app ---
     APP_NAME: str = "AI Dispatcher МЧС"
-    APP_ENV: Literal["local", "dev", "staging", "production"] = "local"
+    # Deployment environment. ``local``/``dev`` are Development, ``testing`` is
+    # the automated-test/QA tier, then ``staging`` and ``production``. All four
+    # tiers required for industrial operation are covered; ``local`` is the
+    # developer default so nothing has to be configured to start.
+    APP_ENV: Literal["local", "dev", "testing", "staging", "production"] = "local"
     APP_VERSION: str = "0.1.0"
     DEBUG: bool = False
     API_V1_PREFIX: str = "/api/v1"
@@ -59,6 +63,30 @@ class Settings(BaseSettings):
     DB_POOL_SIZE: int = 5
     DB_MAX_OVERFLOW: int = 10
     DB_POOL_PRE_PING: bool = True
+
+    # -------------------------------------------------------------- secrets --
+    # Where sensitive values (DB password, API keys, tokens, certificates,
+    # encryption keys) are resolved from. Secrets are NEVER committed to the
+    # repository — this selects the backend that supplies them at runtime:
+    #   env   — read from environment variables (12-factor; default).
+    #   file  — read from files in ``SECRETS_DIR`` (Docker/Kubernetes secrets,
+    #           systemd credentials); the value is the file's trimmed content.
+    #   vault — corporate secrets-manager seam (HashiCorp Vault-style). The
+    #           interface is prepared; no live vault client is bundled.
+    # See ``app.config.secrets`` and ``docs/production/secrets.md``.
+    SECRETS_PROVIDER: Literal["env", "file", "vault"] = "env"
+    # Directory of secret files for the ``file`` provider (one file per key).
+    SECRETS_DIR: str = "/run/secrets"
+    # Optional environment-variable name prefix (e.g. ``DISPATCHER_``) applied
+    # by the ``env`` provider before lookup; empty means look up keys verbatim.
+    SECRETS_ENV_PREFIX: str = ""
+    # Corporate secrets-manager connection (architecture seam only; unused until
+    # an operator supplies a client via ``app.config.secrets.vault_provider``).
+    VAULT_ADDR: str | None = None
+    VAULT_TOKEN: str | None = None
+    VAULT_NAMESPACE: str | None = None
+    VAULT_KV_MOUNT: str = "secret"
+    VAULT_SECRET_PATH: str | None = None
 
     # --------------------------------------------------------------- cors ----
     CORS_ORIGINS: list[str] = Field(default_factory=lambda: ["*"])

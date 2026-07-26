@@ -1,7 +1,15 @@
 # =========================================================================
-# AI Dispatcher МЧС — local development stack.
-# Brings up PostgreSQL and the FastAPI backend. Migrations run automatically
-# before the API server starts.
+# AI Dispatcher МЧС — local / single-host stack.
+# Brings up PostgreSQL (PostGIS) and the FastAPI backend. Migrations run
+# automatically before the API server starts.
+#
+# Optional shared cache for multi-instance deployments is provided behind the
+# "cache" profile:  `docker compose --profile cache up`.
+#
+# Secrets: for local use the compose file reads POSTGRES_PASSWORD from the
+# environment / .env. In production do NOT put real secrets in .env — mount
+# them as files (SECRETS_PROVIDER=file, /run/secrets) or use the secrets
+# manager. See docs/production/secrets.md.
 # =========================================================================
 
 services:
@@ -9,6 +17,7 @@ services:
     # PostGIS-enabled PostgreSQL 16 — required by the spatial columns/indexes.
     image: postgis/postgis:16-3.4
     container_name: dispatcher-db
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-dispatcher}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-dispatcher}
@@ -27,7 +36,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    image: dispatcher-api:${APP_VERSION:-latest}
     container_name: dispatcher-api
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
@@ -37,12 +48,37 @@ services:
     environment:
       # Inside the compose network the database is reachable as "db".
       POSTGRES_HOST: db
+      APP_ENV: ${APP_ENV:-local}
     ports:
       - "${PORT:-8000}:8000"
+    # Container-level readiness check (mirrors the image HEALTHCHECK) so the
+    # orchestrator can gate traffic and restart a wedged instance.
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import sys,urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4).status==200 else 1)\""]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
     # Apply migrations, then launch the API server.
     command: >
       sh -c "alembic upgrade head &&
              uvicorn app.main:app --host 0.0.0.0 --port 8000"
+
+  # Optional shared cache for multi-instance deployments (§5). Disabled by
+  # default; enable with `--profile cache` and set GIS_REDIS_URL / the
+  # *_CACHE_BACKEND settings to use it. No application code depends on it yet.
+  cache:
+    image: redis:7-alpine
+    container_name: dispatcher-cache
+    restart: unless-stopped
+    profiles: ["cache"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
 
 volumes:
   db_data:
