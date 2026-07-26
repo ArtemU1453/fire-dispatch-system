@@ -436,6 +436,19 @@ live system is never affected. Modes: учебный / экзаменацион�
 моделирование / воспроизведение. REST API under `/api/v1/training`. See
 [`docs/simulator.md`](docs/simulator.md).
 
+## Digital Twin (strategic analysis)
+
+An **isolated** digital-twin platform
+([`backend/app/digital_twin/`](backend/app/digital_twin/)) for strategic
+analysis and long-term planning: model infrastructure-development options
+(open/close stations, depot repair, road changes, new objects, changed norms),
+analyse **territory coverage**, **compare scenarios**, **forecast load** and
+generate **analytical reports** (coverage/risk maps, impact assessment,
+justification). It works **only on copies of the data** and adds **no
+migration**, so the live system is never affected; it **compares and
+recommends** but never changes anything automatically. REST API under
+`/api/v1/digital-twin`. See [`docs/digital-twin.md`](docs/digital-twin.md).
+
 ## License
 
 Proprietary — internal scaffold.

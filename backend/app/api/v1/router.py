@@ -14,6 +14,7 @@ from app.ai.router import ai_router
 from app.analytics.router import analytics_router
 from app.api.v1.endpoints import health
 from app.calls.router import calls_router
+from app.digital_twin.router import digital_twin_router
 from app.dispatch.router import dispatch_router
 from app.gis.router import gis_router
 from app.incidents.router import incidents_router
@@ -43,3 +44,5 @@ api_router.include_router(observability_router)
 api_router.include_router(analytics_router)
 # Training / simulation platform — isolated contour, no production DB access.
 api_router.include_router(simulator_router)
+# Digital Twin strategic-analysis platform — works on copies only, no prod DB.
+api_router.include_router(digital_twin_router)
