@@ -10,6 +10,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.api.v1.endpoints import health
+from app.calls.router import calls_router
 from app.dispatch.router import dispatch_router
 from app.gis.router import gis_router
 from app.incidents.router import incidents_router
@@ -30,3 +31,4 @@ api_router.include_router(dispatch_router)
 api_router.include_router(rules_router)
 api_router.include_router(routing_router)
 api_router.include_router(incidents_router)
+api_router.include_router(calls_router)
