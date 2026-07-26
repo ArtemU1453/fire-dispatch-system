@@ -11,6 +11,7 @@ from fastapi import APIRouter
 
 from app.admin.router import admin_router
 from app.ai.router import ai_router
+from app.analytics.router import analytics_router
 from app.api.v1.endpoints import health
 from app.calls.router import calls_router
 from app.dispatch.router import dispatch_router
@@ -38,3 +39,4 @@ api_router.include_router(calls_router)
 api_router.include_router(ai_router)
 api_router.include_router(admin_router)
 api_router.include_router(observability_router)
+api_router.include_router(analytics_router)

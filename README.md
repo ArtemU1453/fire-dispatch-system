@@ -287,6 +287,27 @@ text), `logs`, `traces`, `alerts`, `status`. Not tied to any product
 (Prometheus/Grafana/OpenTelemetry/ELK); seams left for the next (analytics/KPI)
 stage. See [`docs/observability.md`](docs/observability.md).
 
+### Operational analytics platform (Stage 15)
+
+An `app/analytics/` module is the **operational-intelligence** layer — **KPIs**,
+role **dashboards**, **statistics**, **trends**, **decision-support findings**,
+**reports** and **exports** — giving management and dispatchers objective
+information about the service. It is **read-only** (consumes existing modules'
+data through their public models, changes nothing, and never influences real-time
+decisions — no Dispatch-Engine effect) and adds **no database table** (computed on
+demand, briefly cached). KPIs live in an **extensible registry** (add a KPI without
+touching existing code): call/incident counts, average registration/decision/
+assignment times, dispatcher & unit load, resource utilization, and confirmed-
+recommendation rate. Four role dashboards (shift lead, garrison chief, admin,
+dispatcher) each expose their own KPI set. Reports are daily/weekly/monthly/custom;
+a single **`ExportService`** renders CSV and **XLSX** (pure-stdlib OOXML writer —
+no new dependency; PDF plugs in later) and **audits every export**. **RBAC** gates
+reads/exports (reusing the Administration RBAC), and Decision Support surfaces
+overloaded districts/units and load trends as advisory findings (**no AI, no
+forecasting**). REST under `/api/v1/analytics`: `kpi`, `statistics`,
+`dashboard/{role}`, `reports`, `trends`, `decision-support`, `export`. See
+[`docs/analytics.md`](docs/analytics.md).
+
 ## Quick start with Docker Compose (recommended)
 
 Requires Docker and Docker Compose.
