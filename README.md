@@ -182,6 +182,28 @@ active/archive, get, update, `PATCH /status`, `/timeline`, `/comments`, `/units`
 `/recommend`). No telephony, speech, AI, admin panel or external exchange — seams
 left for the next stage. See [`docs/incidents.md`](docs/incidents.md).
 
+### Real-time resource / unit management (Stage 10)
+
+An `app/resources/` module keeps the **live operational state** of every
+dispatchable **unit** (отделение / расчёт), its **vehicle**, **crew** and
+**personnel**: current status, crew composition, incident assignments,
+per-vehicle condition (fuel, mileage, service) and an **append-only history** of
+every change. It is built **on top of** the Stage-2 resource model without
+modifying it — vehicles / personnel / stations stay the existing `resources`
+rows, and the 9 minimum statuses (В боевом расчёте, Свободно, Следует к месту
+вызова, Работает на месте, Возвращается, На обслуживании, На ремонте, Недоступно,
+Резерв) are **catalog data** changeable without code. A status change here
+propagates to `resources.availability_status`, so the **Dispatch Engine reads
+current data without any engine change**. Coordinates come through a pluggable
+`PositionProvider` (stored last-known position; **no GPS**). 9 operational tables,
+native PG enums, reversible migration + status seed. REST under `/api/v1`:
+`units`, `units/{id}` (`PATCH /status`, `/crew`, `/assign`, `/return`,
+`/location`), `vehicles`, `vehicles/{id}/status`, `crews`, `crews/{id}/composition`,
+`personnel`, `personnel/{id}/status`, `resources/bulk-status`, `resources/status`,
+`resources/history`. No GPS, WebSocket, telemetry, external exchange or AI —
+WebSocket-ready seams left for the next stage. See
+[`docs/resources.md`](docs/resources.md).
+
 ## Quick start with Docker Compose (recommended)
 
 Requires Docker and Docker Compose.
