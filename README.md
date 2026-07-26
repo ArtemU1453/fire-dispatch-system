@@ -449,6 +449,17 @@ migration**, so the live system is never affected; it **compares and
 recommends** but never changes anything automatically. REST API under
 `/api/v1/digital-twin`. See [`docs/digital-twin.md`](docs/digital-twin.md).
 
+## Mobile platform (Commander & Responder)
+
+Two thin mobile apps over a backend BFF ([`backend/app/mobile/`](backend/app/mobile/)
++ client SDK in [`mobile/`](mobile/)): **Commander** (command staff) and
+**Responder** (field units). All decisions are made **server-side** — the apps
+carry no business logic. Includes a **vendor-neutral PushService**, **offline**
+cache + idempotent sync, and secure token/session handling (hash-only storage,
+idle auto-logout, remote revoke). The BFF reuses existing services via a provider
+seam and adds **no migration**. REST API under `/api/v1/mobile`. See
+[`docs/mobile.md`](docs/mobile.md).
+
 ## License
 
 Proprietary — internal scaffold.
