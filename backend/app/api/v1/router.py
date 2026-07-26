@@ -18,6 +18,7 @@ from app.digital_twin.router import digital_twin_router
 from app.dispatch.router import dispatch_router
 from app.gis.router import gis_router
 from app.incidents.router import incidents_router
+from app.mobile.router import mobile_router
 from app.observability.router import observability_router
 from app.resources.router import resources_router
 from app.routing.router import routing_router
@@ -46,3 +47,5 @@ api_router.include_router(analytics_router)
 api_router.include_router(simulator_router)
 # Digital Twin strategic-analysis platform — works on copies only, no prod DB.
 api_router.include_router(digital_twin_router)
+# Mobile platform BFF (Commander + Responder) — server-side decisions, no prod DB.
+api_router.include_router(mobile_router)

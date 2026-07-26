@@ -1,0 +1,16 @@
+{
+  "name": "ai-dispatcher-mobile",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Mobile platform (Commander + Responder) for AI Dispatcher МЧС — thin clients over the backend BFF.",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "vitest": "^2.1.1"
+  }
+}
