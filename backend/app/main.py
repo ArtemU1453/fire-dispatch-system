@@ -22,6 +22,8 @@ from app.core.logging import configure_logging, get_logger
 from app.gis.cache import create_cache
 from app.gis.providers import create_provider
 from app.middleware import RequestContextMiddleware
+from app.observability import install as install_observability
+from app.observability.middleware import ObservabilityMiddleware
 from app.routing.config import RoutingConfig
 from app.routing.providers import create_provider as create_routing_provider
 from app.routing.repositories import create_route_cache
@@ -74,6 +76,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     """Build and configure a :class:`FastAPI` application instance."""
     settings = settings or get_settings()
     configure_logging(settings)
+    # Observability: capture recent logs + stamp every record with the Trace ID.
+    install_observability()
 
     app = FastAPI(
         title=settings.APP_NAME,
@@ -87,7 +91,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.state.settings = settings
 
     # --- Middleware -------------------------------------------------------
+    # Order: CORS (outermost) → Observability (Trace ID + metrics) →
+    # RequestContext (access log, sees the Trace ID) → app.
     app.add_middleware(RequestContextMiddleware)
+    app.add_middleware(ObservabilityMiddleware)
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.CORS_ORIGINS,
