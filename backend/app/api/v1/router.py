@@ -16,6 +16,7 @@ from app.calls.router import calls_router
 from app.dispatch.router import dispatch_router
 from app.gis.router import gis_router
 from app.incidents.router import incidents_router
+from app.observability.router import observability_router
 from app.resources.router import resources_router
 from app.routing.router import routing_router
 from app.rules.router import rules_router
@@ -36,3 +37,4 @@ api_router.include_router(incidents_router)
 api_router.include_router(calls_router)
 api_router.include_router(ai_router)
 api_router.include_router(admin_router)
+api_router.include_router(observability_router)

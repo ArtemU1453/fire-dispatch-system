@@ -265,6 +265,28 @@ represented but **not implemented** (no SSO/2FA). Every change is **audited**
 `audit`, `ai/providers`. Contains no dispatch logic and modifies no existing
 business module. See [`docs/admin.md`](docs/admin.md).
 
+### Observability platform (Stage 14)
+
+An `app/observability/` module provides **monitoring, logging and observability**
+for the whole system — real-time component state and diagnostics — **without a
+new database table** and **without changing any business logic**. Every subsystem
+exposes state through one **`HealthProvider`** interface (`health` / `readiness` /
+`liveness` / `version`); the platform supplies a health **adapter** per module
+(DB-, provider- or stateless-backed) so all modules are covered without editing
+them. A backend-agnostic in-memory **metrics registry** (counters / gauges /
+histograms) collects request rate, error %, API response time, uptime and business
+gauges (active incidents / calls, available units, queue size, active users). A
+**`LoggingService`** gives all six levels (TRACE…CRITICAL), structured output,
+Trace-ID correlation and **masking** of secrets / personal data / conversation
+text. Each request carries a unique **Trace ID** (via `contextvars`) that flows
+through all services and stamps every log line. An **`AlertService`** evaluates
+rules (service unavailable, error-rate/response-time/queue thresholds, health-check
+failure) and **generates events** (no real delivery). REST under
+`/api/v1/observability`: `health` (+ `live`/`ready`), `metrics` (+ Prometheus
+text), `logs`, `traces`, `alerts`, `status`. Not tied to any product
+(Prometheus/Grafana/OpenTelemetry/ELK); seams left for the next (analytics/KPI)
+stage. See [`docs/observability.md`](docs/observability.md).
+
 ## Quick start with Docker Compose (recommended)
 
 Requires Docker and Docker Compose.
