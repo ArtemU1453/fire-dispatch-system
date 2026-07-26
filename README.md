@@ -165,6 +165,23 @@ and list virtualization. Tests with Vitest + React Testing Library. See
 [`docs/frontend.md`](docs/frontend.md) — run with `cd frontend && npm install &&
 npm run dev`.
 
+### Incident management (Stage 9)
+
+An `app/incidents/` module makes the **incident card the central entity** of the
+system — every subsystem relates to an incident. It owns the incident **lifecycle
+as a finite state machine** (created → checking → confirmed → selecting →
+dispatch-confirmed → dispatched → on-scene → localized → liquidated → completed →
+archived; cancellable before dispatch), **rejecting invalid transitions**. Every
+change is recorded three ways: a human-facing **timeline** (chronology), a
+field-level **history** (who / when / old → new / source) and a technical **log**.
+It stores comments, attachment **metadata** (architecture only), participants and
+locations, and links to **recommendations** (via the existing Dispatch Engine,
+unchanged) and **dispatched units** (resources). 10 tables, native PG enums,
+reversible migration. REST under `/api/v1/incidents` (create, list,
+active/archive, get, update, `PATCH /status`, `/timeline`, `/comments`, `/units`,
+`/recommend`). No telephony, speech, AI, admin panel or external exchange — seams
+left for the next stage. See [`docs/incidents.md`](docs/incidents.md).
+
 ## Quick start with Docker Compose (recommended)
 
 Requires Docker and Docker Compose.
