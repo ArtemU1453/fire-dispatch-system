@@ -14,6 +14,27 @@ set -euo pipefail
 
 log() { printf '[migrations] %s\n' "$*" >&2; }
 
+# Some PostGIS images (e.g. postgis/postgis) auto-install the Tiger geocoder and
+# topology extensions, which create dozens of tables in the `tiger`/`topology`
+# schemas. This application uses PostGIS geometry but NOT those extensions, so
+# `alembic check` would otherwise report them as spurious drift. Drop them
+# (best-effort) before the drift check so it compares only application-managed
+# objects. `postgis` itself is kept. No-op if psql is unavailable or they are
+# already absent.
+if command -v psql >/dev/null 2>&1; then
+  log "0/4 drop non-application PostGIS extensions (tiger geocoder, topology)"
+  PGHOST="${POSTGRES_HOST:-localhost}" PGPORT="${POSTGRES_PORT:-5432}" \
+  PGUSER="${POSTGRES_USER:-dispatcher}" PGDATABASE="${POSTGRES_DB:-dispatcher}" \
+  PGPASSWORD="${PGPASSWORD:-${POSTGRES_PASSWORD:-}}" \
+  psql -v ON_ERROR_STOP=0 -q \
+    -c "DROP EXTENSION IF EXISTS postgis_tiger_geocoder CASCADE;" \
+    -c "DROP EXTENSION IF EXISTS postgis_topology CASCADE;" \
+    -c "DROP SCHEMA IF EXISTS tiger CASCADE;" \
+    -c "DROP SCHEMA IF EXISTS tiger_data CASCADE;" \
+    -c "DROP SCHEMA IF EXISTS topology CASCADE;" >/dev/null 2>&1 || \
+    log "  (skipped: could not connect or nothing to drop)"
+fi
+
 log "1/4 upgrade -> head"
 alembic upgrade head
 
