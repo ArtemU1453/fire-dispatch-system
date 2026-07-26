@@ -204,6 +204,27 @@ native PG enums, reversible migration + status seed. REST under `/api/v1`:
 WebSocket-ready seams left for the next stage. See
 [`docs/resources.md`](docs/resources.md).
 
+### Call management (Stage 11)
+
+An `app/calls/` module handles the **reception, registration and processing of
+emergency calls**. Every incoming call becomes its own entity and is **linked to
+one or more incident cards** (Stage 9) — it either creates a new incident or is
+attached to an existing one, and that selection logic lives in a dedicated
+`CallIncidentLinker` that reuses the Incident Management service **unchanged**. It
+owns the call **lifecycle as a state machine** (new → ringing → accepted →
+in-progress → linked → completed; cancellable; recoverable error), **rejecting
+invalid transitions**, and a priority **dispatch queue** built for multiple
+dispatcher workstations. Telephony is abstracted behind a pluggable
+`CallProvider` interface (receive / answer / end / hold / transfer / health) with
+a fully working **`MockCallProvider`** — real SIP / Asterisk / FreeSWITCH plugs in
+without code change. Call **recordings** and **transcripts** are modelled as
+metadata only (no audio, no ASR). 8 tables, native PG enums, reversible
+migration, append-only history. REST under `/api/v1/calls`: create, list, get,
+`PATCH /status`, `/incident` (create or link), `/queue`, `/history`, `/assign`,
+telephony actions and `provider/health`. No real telephony, recording, speech
+recognition or AI — seams left for the next (AI) stage. See
+[`docs/calls.md`](docs/calls.md).
+
 ## Quick start with Docker Compose (recommended)
 
 Requires Docker and Docker Compose.
