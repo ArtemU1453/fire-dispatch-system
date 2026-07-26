@@ -22,6 +22,7 @@ from app.resources.router import resources_router
 from app.routing.router import routing_router
 from app.rules.router import rules_router
 from app.search.router import search_router
+from app.simulator.router import simulator_router
 
 api_router = APIRouter()
 api_router.include_router(health.router)
@@ -40,3 +41,5 @@ api_router.include_router(ai_router)
 api_router.include_router(admin_router)
 api_router.include_router(observability_router)
 api_router.include_router(analytics_router)
+# Training / simulation platform — isolated contour, no production DB access.
+api_router.include_router(simulator_router)

@@ -425,6 +425,17 @@ Operational tooling:
   checks, container build) over the same Makefile targets.
 - **`deploy/env/*.example`** — per-environment configuration templates.
 
+## Simulation & Training Platform
+
+An **isolated** training contour ([`backend/app/simulator/`](backend/app/simulator/))
+for training dispatchers, running exercises, replaying incidents and modelling
+emergencies — with automatic evaluation of the trainee's actions. It uses **no
+production database** and adds **no migration**: all simulation state is
+in-memory and scenarios are stored separately (in-memory or JSON files), so the
+live system is never affected. Modes: учебный / экзаменационный / свободное
+моделирование / воспроизведение. REST API under `/api/v1/training`. See
+[`docs/simulator.md`](docs/simulator.md).
+
 ## License
 
 Proprietary — internal scaffold.
