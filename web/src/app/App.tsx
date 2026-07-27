@@ -20,6 +20,10 @@ import { NotFoundPage } from "@/pages/NotFoundPage";
 const DispatcherWorkspacePage = lazy(
   () => import("@/features/dispatcher-workspace/pages/DispatcherWorkspacePage"),
 );
+// Code-split the incident-registration workflow (also OpenLayers-heavy).
+const IncidentRegistrationPage = lazy(
+  () => import("@/features/incident-registration/pages/IncidentRegistrationPage"),
+);
 
 export function App() {
   return (
@@ -47,6 +51,20 @@ export function App() {
                     }
                   >
                     <DispatcherWorkspacePage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/incidents/new"
+                element={
+                  <Suspense
+                    fallback={
+                      <div className="flex h-full items-center justify-center">
+                        <Loader label="Загрузка формы регистрации…" />
+                      </div>
+                    }
+                  >
+                    <IncidentRegistrationPage />
                   </Suspense>
                 }
               />
