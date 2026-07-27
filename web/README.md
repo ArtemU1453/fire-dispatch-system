@@ -60,6 +60,19 @@ UI kit and stores without changing that architecture. See
 [`docs/DispatcherWorkspace.md`](docs/DispatcherWorkspace.md) for the full
 architecture, data flows, WebSocket contract and component map.
 
+### Incident registration workflow (Stage 3)
+
+`/incidents/new` (opened with the **Новое происшествие** button or the **F2**
+hotkey) runs the full registration business process: incident card (RHF + Zod),
+address autocomplete, GIS map with nearest units and routes, the Dispatch Engine
+recommendation, force-composition editing, a confirmation modal, and hand-off to
+the Dispatch Engine — after which the dispatcher workspace auto-refreshes. It
+reuses the Stage 1/2 API client, UI kit and stores without changing that
+architecture. See
+[`docs/IncidentRegistrationWorkflow.md`](docs/IncidentRegistrationWorkflow.md)
+for architecture, the step sequence, the backend mapping and the store shape.
+Module coverage ≈92% lines (`npm run test:coverage`).
+
 ### Layout & theming
 
 All layout metrics (header height, sidebar width, etc.) and colors are defined
