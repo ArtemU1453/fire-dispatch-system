@@ -38,6 +38,8 @@ src/
   components/
     ui/          base component library (shadcn-style, Radix + cva)
     layout/      Header, Sidebar, Footer, NotificationPanel, nav
+  features/
+    dispatcher-workspace/  Stage 2 — full dispatcher workspace (see below)
   hooks/         useAuth, useClock
   services / api api client (Axios + interceptors + refresh + retry), auth API
   store/         Zustand stores (auth, user, notification, settings)
@@ -47,6 +49,16 @@ src/
   lib/ utils/    cn(), env, formatting
   styles/        Tailwind + CSS-variable theme tokens
 ```
+
+### Dispatcher workspace (Stage 2)
+
+The `/dashboard` route is the full dispatcher workspace — a five-zone
+operational screen (KPI header, incident list, OpenLayers map, incident details,
+event log) with a resilient WebSocket channel, TanStack Query caching/optimistic
+updates, virtual scrolling and code-splitting. It reuses the Stage 1 API client,
+UI kit and stores without changing that architecture. See
+[`docs/DispatcherWorkspace.md`](docs/DispatcherWorkspace.md) for the full
+architecture, data flows, WebSocket contract and component map.
 
 ### Layout & theming
 

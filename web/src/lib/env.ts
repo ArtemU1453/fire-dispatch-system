@@ -9,4 +9,19 @@ export const env = {
   authRefreshPath: import.meta.env.VITE_AUTH_REFRESH_PATH ?? "/admin/auth/refresh",
   authMePath: import.meta.env.VITE_AUTH_ME_PATH ?? "/admin/auth/me",
   idleTimeout: Number(import.meta.env.VITE_IDLE_TIMEOUT ?? 30 * 60 * 1000),
+
+  /**
+   * Real-time channel for the dispatcher workspace. When left empty the URL is
+   * derived from the current origin (ws[s]://host/ws/dispatcher), so nothing is
+   * hard-coded. The socket degrades gracefully: if it never connects, the
+   * workspace keeps its data fresh through TanStack Query polling.
+   */
+  wsUrl: import.meta.env.VITE_WS_URL ?? "",
+  wsDispatcherPath: import.meta.env.VITE_WS_DISPATCHER_PATH ?? "/ws/dispatcher",
+
+  /** Polling fallbacks (ms) — used when the socket is not connected. */
+  pollIncidents: Number(import.meta.env.VITE_POLL_INCIDENTS ?? 15000),
+  pollResources: Number(import.meta.env.VITE_POLL_RESOURCES ?? 20000),
+  pollStats: Number(import.meta.env.VITE_POLL_STATS ?? 15000),
+  pollLog: Number(import.meta.env.VITE_POLL_LOG ?? 12000),
 } as const;
