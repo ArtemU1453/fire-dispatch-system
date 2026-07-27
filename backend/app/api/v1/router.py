@@ -14,6 +14,7 @@ from app.ai.router import ai_router
 from app.analytics.router import analytics_router
 from app.api.v1.endpoints import health
 from app.calls.router import calls_router
+from app.crisis.router import crisis_router
 from app.digital_twin.router import digital_twin_router
 from app.dispatch.router import dispatch_router
 from app.gis.router import gis_router
@@ -49,3 +50,5 @@ api_router.include_router(simulator_router)
 api_router.include_router(digital_twin_router)
 # Mobile platform BFF (Commander + Responder) — server-side decisions, no prod DB.
 api_router.include_router(mobile_router)
+# Crisis Management Platform — overlay for large-scale operations (crisis_* tables).
+api_router.include_router(crisis_router)

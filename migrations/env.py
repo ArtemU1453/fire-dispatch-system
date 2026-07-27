@@ -17,6 +17,7 @@ from sqlalchemy import engine_from_config, pool
 import app.admin.models  # noqa: F401  (side-effect: registers admin models)
 import app.ai.models  # noqa: F401  (side-effect: registers AI audit model)
 import app.calls.models  # noqa: F401  (side-effect: registers call models)
+import app.crisis.models  # noqa: F401  (side-effect: registers crisis models)
 import app.dispatch.models  # noqa: F401  (side-effect: registers dispatch models)
 import app.gis.models  # noqa: F401  (side-effect: registers GIS models)
 import app.incidents.models  # noqa: F401  (side-effect: registers incident models)

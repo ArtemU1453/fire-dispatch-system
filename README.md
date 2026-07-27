@@ -460,6 +460,18 @@ idle auto-logout, remote revoke). The BFF reuses existing services via a provide
 seam and adds **no migration**. REST API under `/api/v1/mobile`. See
 [`docs/mobile.md`](docs/mobile.md).
 
+## Crisis Management Platform
+
+An **overlay** for large-scale emergencies
+([`backend/app/crisis/`](backend/app/crisis/)): operational **headquarters**
+(commander + deputies + decisions), **sectors**, **resource groupings** with
+relocation history, the **operational plan** (stages + tasks), an **immutable**
+unified journal, and a **situation board**. Response levels are a configurable
+reference table. It is an add-on — it never changes the Dispatch Engine,
+incidents or GIS, references existing data by id only, is RBAC-gated and fully
+journalled. REST API under `/api/v1/crisis`. See
+[`docs/crisis.md`](docs/crisis.md).
+
 ## License
 
 Proprietary — internal scaffold.
