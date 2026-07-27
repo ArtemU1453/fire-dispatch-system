@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Light theme (prepared for the future; the app ships dark by default). */
+:root {
+  --background: 210 30% 98%;
+  --foreground: 213 40% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 213 40% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 213 40% 12%;
+  --panel: 210 30% 97%;
+  --panel-foreground: 213 40% 12%;
+  --primary: 352 70% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 214 25% 92%;
+  --secondary-foreground: 213 40% 16%;
+  --muted: 214 25% 92%;
+  --muted-foreground: 214 15% 40%;
+  --accent: 217 90% 58%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 352 70% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 25% 85%;
+  --input: 214 25% 85%;
+  --ring: 217 90% 58%;
+  --success: 152 62% 40%;
+  --warning: 38 92% 45%;
+  --info: 217 90% 55%;
+  --danger: 352 70% 50%;
+  --radius: 1rem;
+
+  /* Enterprise layout metrics — all sizes via CSS variables. */
+  --header-height: 64px;
+  --sidebar-width: 264px;
+  --sidebar-width-collapsed: 76px;
+  --footer-height: 40px;
+  --notification-width: 380px;
+}
+
+/* Dark theme (default — <html class="dark">). */
+.dark {
+  --background: 213 40% 9%;
+  --foreground: 213 25% 97%;
+  --card: 213 38% 14%;
+  --card-foreground: 213 25% 97%;
+  --popover: 213 40% 12%;
+  --popover-foreground: 213 25% 97%;
+  --panel: 213 38% 14%;
+  --panel-foreground: 213 25% 97%;
+  --primary: 352 70% 50%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 213 30% 20%;
+  --secondary-foreground: 213 25% 97%;
+  --muted: 213 30% 18%;
+  --muted-foreground: 214 20% 71%;
+  --accent: 217 90% 60%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 352 70% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 214 31% 20%;
+  --input: 214 31% 22%;
+  --ring: 217 90% 60%;
+  --success: 152 62% 47%;
+  --warning: 43 100% 50%;
+  --info: 217 100% 61%;
+  --danger: 352 70% 50%;
+}
+
+* { border-color: hsl(var(--border)); }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: Inter, "SF Pro Display", "Segoe UI", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
