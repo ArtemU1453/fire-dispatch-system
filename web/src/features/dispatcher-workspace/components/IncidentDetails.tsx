@@ -5,6 +5,7 @@
  * Includes a guarded status-change control driven by `allowed_transitions`.
  */
 import { memo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   MapPin,
   Crosshair,
@@ -95,6 +96,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 function IncidentDetailsBase() {
+  const navigate = useNavigate();
   const selectedId = useDispatcherStore((s) => s.selectedIncidentId);
   const requestFlyTo = useDispatcherStore((s) => s.requestFlyTo);
   const { data: incident, isLoading, isError } = useIncidentDetails(selectedId);
@@ -153,6 +155,13 @@ function IncidentDetailsBase() {
           {incident.description && (
             <p className="mt-1 text-xs text-muted-foreground">{incident.description}</p>
           )}
+          <Button
+            size="sm"
+            className="mt-2 w-full"
+            onClick={() => navigate(`/incidents/${incident.id}`)}
+          >
+            Открыть управление происшествием
+          </Button>
         </section>
 
         {/* Location */}

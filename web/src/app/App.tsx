@@ -24,6 +24,10 @@ const DispatcherWorkspacePage = lazy(
 const IncidentRegistrationPage = lazy(
   () => import("@/features/incident-registration/pages/IncidentRegistrationPage"),
 );
+// Code-split the operational incident-management screen (OpenLayers-heavy).
+const IncidentManagementPage = lazy(
+  () => import("@/features/incident-management/pages/IncidentManagementPage"),
+);
 
 export function App() {
   return (
@@ -69,6 +73,20 @@ export function App() {
                 }
               />
               <Route path={paths.incidents} element={<IncidentsPage />} />
+              <Route
+                path="/incidents/:incidentId"
+                element={
+                  <Suspense
+                    fallback={
+                      <div className="flex h-full items-center justify-center">
+                        <Loader label="Загрузка управления происшествием…" />
+                      </div>
+                    }
+                  >
+                    <IncidentManagementPage />
+                  </Suspense>
+                }
+              />
               <Route path={paths.resources} element={<ResourcesPage />} />
               <Route path={paths.map} element={<MapPage />} />
               <Route path={paths.journal} element={<JournalPage />} />
